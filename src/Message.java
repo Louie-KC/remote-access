@@ -1,20 +1,21 @@
-import java.util.Optional;
+import java.io.Serializable;
+// import java.util.Optional;
 
-public class Message<T> {
+public class Message<T> implements Serializable {
     private String type;
     private T data;
-    private Optional<String> piggyback;
+    // private Optional<String> piggyback;
 
     // Constructors
     public Message(String msgType, T msgData) {
         type = msgType;
         data = msgData;
-        piggyback = Optional.empty();
+        // piggyback = Optional.empty();
     }
 
     public Message(String msgType, T msgData, String msgPiggyback) {
         this(msgType, msgData);
-        piggyback = Optional.of(msgPiggyback);
+        // piggyback = Optional.of(msgPiggyback);
     }
 
     // Methods
@@ -22,18 +23,18 @@ public class Message<T> {
 
     public T getData() { return data; }
 
-    public boolean hasPiggyback() {
-        if (piggyback.isPresent()) {
-            return true;
-        }
-        return false;
-    }
+    // public boolean hasPiggyback() {
+    //     if (piggyback.isPresent()) {
+    //         return true;
+    //     }
+    //     return false;
+    // }
 
-    public String getPiggyback() { 
-        if (piggyback.isPresent() && !piggyback.get().isBlank()) {
-            return piggyback.get();
-        }
-        return "";
-    }
+    // public String getPiggyback() { 
+    //     if (piggyback.isPresent() && !piggyback.get().isBlank()) {
+    //         return piggyback.get();
+    //     }
+    //     return "";
+    // }
 
 }

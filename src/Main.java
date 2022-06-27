@@ -1,10 +1,18 @@
 public class Main {
-    public static String targetIP;
-    public static int targetPort;
+    private static String targetIP = "127.0.0.1";
+    private static int targetPort = 7777;
     private static boolean isRemoteMachine;
+
+    private static Base program;
 
     public static void main(String[] args) {
         if (!handleArgs(args)) { return; }
+        if (isRemoteMachine) {
+            program = new Remote(targetPort);
+        } else {
+            program = new Client(targetIP, targetPort);
+        }
+        
     }
 
     private static boolean handleArgs(String[] args) {
@@ -17,7 +25,7 @@ public class Main {
                 case "-p":
                     targetPort = Integer.valueOf(args[++i]);
                     continue;
-                case "-host":
+                case "-client":
                     isRemoteMachine = false;
                     continue;
                 case "-remote":
