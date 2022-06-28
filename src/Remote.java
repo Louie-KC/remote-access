@@ -29,17 +29,14 @@ public class Remote extends Base {
             e.printStackTrace();
         }
         screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+    }
 
-        // testing
+    @Override
+    public void run() {
+        System.out.println("Run start");
+        // Check if halt until receive some message
+        if (!receiveMsg()) { System.exit(0); }
         sendScreenImg();
-
-        if (socket != null) {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     /**

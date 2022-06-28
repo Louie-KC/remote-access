@@ -10,6 +10,8 @@ public abstract class Base {
     ObjectInputStream objInStream;
     ObjectOutputStream objOutStream;
 
+    public abstract void run();
+
     /**
      * Sends a Message (serialisable) object via the programs ObjectOutputStream.
      * @param msg

@@ -1,16 +1,18 @@
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 import java.awt.image.BufferedImage;
 import java.awt.*;
 
 public class Client extends Base {
+
+    JFrame frame;
     
     public Client(String targetIP, int targetPort) {
         try {
@@ -20,23 +22,30 @@ public class Client extends Base {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
-        // Testing
-        if (!receiveMsg()) { return; }
+    @Override
+    public void run() {
+        JFrame frame = new JFrame("Client test");
+        frame.setSize(800,600);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+
+        // Testing if reading locks
+        System.out.println("Sleeping 5s");
         try {
-            BufferedImage tempImg = imageToBufferedImage(readScreenImg().getImage());
-            ImageIO.write(tempImg, "png", new File("./receivedTest.png"));
-        } catch (IOException e) {
-            e.printStackTrace();
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.getMessage();
         }
+        sendMsg(new Message<String>("", null));
+        if (!receiveMsg()) { System.exit(0); }
+        System.out.println("Received  message");
 
-        if (socket != null) {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        JLabel imgTest = new JLabel();
+        imgTest.setIcon(readScreenImg());
+        frame.add(imgTest);
+        frame.pack();
     }
 
     /**
@@ -69,4 +78,6 @@ public class Client extends Base {
         g2d.dispose();
         return temp;
     }
+
+
 }
