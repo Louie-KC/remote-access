@@ -3,8 +3,18 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 
+import javax.swing.ImageIcon;
+
+import java.awt.image.BufferedImage;
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.awt.Rectangle;
+import java.awt.*;
+
 public class Remote extends Base {
     ServerSocket serverSocket;
+    Rectangle screenRect;
+    Robot robot;
 
     public Remote(int targetPort) {
         try {
@@ -13,25 +23,32 @@ public class Remote extends Base {
             objInStream = new ObjectInputStream(socket.getInputStream());
             objOutStream = new ObjectOutputStream(socket.getOutputStream());
             serverSocket.close();
-        } catch (IOException e) {
-            System.out.println("Error");
+
+            robot = new Robot();
+        } catch (IOException | AWTException e) {
             e.printStackTrace();
         }
+        screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
 
         // testing
-        Message rcvd = receiveMsg();
-        if (rcvd.getType().equals("text")) {
-            System.out.println("received: " + (String)rcvd.getData());
-        }
-        sendMsg(new Message<String>("text", "response from remote"));
+        sendScreenImg();
 
         if (socket != null) {
             try {
                 socket.close();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * Captures the current (entire) screen, and sends as ImageIcon in a Message
+     * via the ObjectOutputStream.
+     */
+    private void sendScreenImg() {
+        BufferedImage img = robot.createScreenCapture(screenRect);
+        sendMsg(new Message<ImageIcon>("img", new ImageIcon(img)));
+        System.out.println("Screen capture message sent");
     }
 }

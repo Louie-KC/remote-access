@@ -12,7 +12,9 @@ public class Main {
         } else {
             program = new Client(targetIP, targetPort);
         }
-        
+        while (program.isConnected()) {
+            
+        }
     }
 
     private static boolean handleArgs(String[] args) {
