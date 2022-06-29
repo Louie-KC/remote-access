@@ -1,40 +1,27 @@
 import java.io.Serializable;
-// import java.util.Optional;
 
 public class Message<T> implements Serializable {
-    private String type;
-    private T data;
-    // private Optional<String> piggyback;
-
-    // Constructors
-    public Message(String msgType, T msgData) {
-        type = msgType;
-        data = msgData;
-        // piggyback = Optional.empty();
+    enum Type {
+        IMG_REQUEST,
+        IMG_RESPONSE,
+        KEY_PRESS,
+        KEY_RELEASE,
+        MOUSE_CLICK,
+        MOUSE_RELEASE
     }
 
-    public Message(String msgType, T msgData, String msgPiggyback) {
-        this(msgType, msgData);
-        // piggyback = Optional.of(msgPiggyback);
+    private Type type;
+    private T data;
+
+    // Constructor
+    public Message(Type msgType, T msgData) {
+        type = msgType;
+        data = msgData;
     }
 
     // Methods
-    public String getType() { return type; }
+    public Type getType() { return type; }
 
     public T getData() { return data; }
-
-    // public boolean hasPiggyback() {
-    //     if (piggyback.isPresent()) {
-    //         return true;
-    //     }
-    //     return false;
-    // }
-
-    // public String getPiggyback() { 
-    //     if (piggyback.isPresent() && !piggyback.get().isBlank()) {
-    //         return piggyback.get();
-    //     }
-    //     return "";
-    // }
 
 }

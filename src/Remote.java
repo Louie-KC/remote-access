@@ -40,8 +40,7 @@ public class Remote extends Base {
      * the message.
      */
     private void actionLastMsg() {
-        String type = lastMsg.getType();
-        if (type.equals("imgreq")) {
+        if (lastMsg.getType().equals(Message.Type.IMG_REQUEST)) {
             sendScreenImg();
             return;
         }
@@ -53,7 +52,7 @@ public class Remote extends Base {
      */
     private void sendScreenImg() {
         BufferedImage img = robot.createScreenCapture(screenRect);
-        sendMsg(new Message<MyImage>("img", new MyImage(img)));
+        sendMsg(new Message<MyImage>(Message.Type.IMG_RESPONSE, new MyImage(img)));
         System.out.println("Screen capture message sent");
     }
 

@@ -36,7 +36,7 @@ public class Client extends Base {
         } catch (InterruptedException e) {
             e.getMessage();
         }
-        sendMsg(new Message<String>("imgreq", ""));
+        sendMsg(new Message<String>(Message.Type.IMG_REQUEST, ""));
         if (!receiveMsg()) { System.exit(0); }
         System.out.println("Received  message");
 
@@ -51,7 +51,7 @@ public class Client extends Base {
      * @return ImageIcon if present, null otherwise.
      */
     private ImageIcon readScreenImg() {
-        if (lastMsg != null && lastMsg.getType().equals("img")) {
+        if (lastMsg != null && lastMsg.getType().equals(Message.Type.IMG_RESPONSE)) {
             if (lastMsg.getData() instanceof MyImage) {
                 return ((MyImage)lastMsg.getData()).getImageIcon(WIDTH, HEIGHT);
             }
