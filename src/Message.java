@@ -4,6 +4,7 @@ public class Message<T> implements Serializable {
     enum Type {
         IMG_REQUEST,
         IMG_RESPONSE,
+        IMG_NO_UPDATE,
         KEY_PRESS,
         KEY_RELEASE,
         MOUSE_CLICK,

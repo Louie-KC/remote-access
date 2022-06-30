@@ -7,6 +7,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
+import java.time.Instant;
+import java.time.Duration;
+
 public class Client extends Base {
     InputReader inputReader;
     JFrame frame;
@@ -34,21 +37,32 @@ public class Client extends Base {
         frame.addKeyListener(inputReader);
         frame.addMouseListener(inputReader);
 
-        // Testing if reading locks
-        System.out.println("Sleeping 3s");
+        System.out.println("Sleeping 1s");
         try {
-            Thread.sleep(3000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.getMessage();
         }
-        sendMsg(new Message<String>(Message.Type.IMG_REQUEST, ""));
-        if (!receiveMsg()) { System.exit(0); }
-        System.out.println("Received message");
+        JLabel screenImageLabel = new JLabel();
 
-        JLabel imgTest = new JLabel();
-        imgTest.setIcon(readScreenImg());
-        frame.add(imgTest);
-        frame.pack();
+        while (true) {
+            Instant loopStart = Instant.now();
+            sendMsg(new Message<String>(Message.Type.IMG_REQUEST, WIDTH + " " + HEIGHT));
+            if (!receiveMsg()) { System.exit(0); }
+            ImageIcon receivedScreenIcon = readScreenImg();
+            if (receivedScreenIcon != null) {  // If an update was received
+                screenImageLabel.setIcon(receivedScreenIcon);
+                frame.add(screenImageLabel);
+                frame.pack();
+            }
+            Instant loopEnd = Instant.now();
+            try {
+                // Sleep for 1/3 of a second
+                Thread.sleep(333L - Duration.between(loopStart, loopEnd).toMillis());
+            } catch (InterruptedException | IllegalArgumentException e) {
+                e.getMessage();
+            }
+        }
     }
 
     /**
@@ -60,6 +74,10 @@ public class Client extends Base {
             if (lastMsg.getData() instanceof MyImage) {
                 return ((MyImage)lastMsg.getData()).getImageIcon(WIDTH, HEIGHT);
             }
+        }
+        if (lastMsg.getType().equals(Message.Type.IMG_NO_UPDATE)) {
+            System.out.println("Screen no update msg received");
+            return null;
         }
         System.out.println("readScreenImg: invalid msg");
         return null;
