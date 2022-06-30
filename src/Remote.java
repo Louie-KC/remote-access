@@ -7,6 +7,7 @@ import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.event.MouseEvent;
 
 public class Remote extends Base {
     ServerSocket serverSocket;
@@ -36,13 +37,28 @@ public class Remote extends Base {
     }
 
     /**
-     * Checks the last received message and invokes the appropriate method to process
-     * the message.
+     * Checks last received message and invokes the appropriate method(s) to
+     * process the message.
      */
     private void actionLastMsg() {
         if (lastMsg.getType().equals(Message.Type.IMG_REQUEST)) {
             sendScreenImg();
-            return;
+        }
+        if (lastMsg.getType().equals(Message.Type.KEY_PRESS)) {
+            robot.keyPress((Integer)lastMsg.getData());
+        }
+        if (lastMsg.getType().equals(Message.Type.KEY_RELEASE)) {
+            robot.keyRelease((Integer)lastMsg.getData());
+        }
+        if (lastMsg.getType().equals(Message.Type.MOUSE_CLICK)) {
+            MouseEvent mEvent = (MouseEvent)lastMsg.getData();
+            robot.mouseMove(mEvent.getX(), mEvent.getY());
+            robot.mousePress(MouseEvent.getMaskForButton(mEvent.getButton()));
+        }
+        if (lastMsg.getType().equals(Message.Type.MOUSE_RELEASE)) {
+            MouseEvent mEvent = (MouseEvent)lastMsg.getData();
+            robot.mouseMove(mEvent.getX(), mEvent.getY());
+            robot.mouseRelease(MouseEvent.getMaskForButton(mEvent.getButton()));
         }
     }
 

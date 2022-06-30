@@ -3,7 +3,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.util.HashMap;
-
 import javax.swing.JFrame;
 
 /**
@@ -30,7 +29,7 @@ public class InputReader implements MouseListener, KeyListener {
     public void keyPressed(KeyEvent e) {
         activeKeys.putIfAbsent(e.getKeyCode(), false);
         if (client != null && !activeKeys.get(e.getKeyCode())) {
-            client.sendMsg(new Message<KeyEvent>(Message.Type.KEY_PRESS, e));
+            client.sendMsg(new Message<Integer>(Message.Type.KEY_PRESS, e.getKeyCode()));
             System.out.println("KeyPressed msg sent");
         } else if (!activeKeys.get(e.getKeyCode())) {
             System.out.println("KeyPressed: " + e.getKeyCode());
@@ -47,7 +46,7 @@ public class InputReader implements MouseListener, KeyListener {
                 System.out.println("Key " + e.getKeyCode() + " was not active");
                 return;
             }
-            client.sendMsg(new Message<KeyEvent>(Message.Type.KEY_RELEASE, e));
+            client.sendMsg(new Message<Integer>(Message.Type.KEY_RELEASE, e.getKeyCode()));
         } else {
             System.out.println("KeyReleased: " + e.getKeyCode());
         }

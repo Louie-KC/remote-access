@@ -8,11 +8,13 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 public class Client extends Base {
+    InputReader inputReader;
     JFrame frame;
     private final int WIDTH = 800;
     private final int HEIGHT = 600;
     
     public Client(String targetIP, int targetPort) {
+        inputReader = new InputReader(this);
         try {
             socket = new Socket(targetIP, targetPort);
             objOutStream = new ObjectOutputStream(socket.getOutputStream());
@@ -29,6 +31,9 @@ public class Client extends Base {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
 
+        frame.addKeyListener(inputReader);
+        frame.addMouseListener(inputReader);
+
         // Testing if reading locks
         System.out.println("Sleeping 3s");
         try {
@@ -38,7 +43,7 @@ public class Client extends Base {
         }
         sendMsg(new Message<String>(Message.Type.IMG_REQUEST, ""));
         if (!receiveMsg()) { System.exit(0); }
-        System.out.println("Received  message");
+        System.out.println("Received message");
 
         JLabel imgTest = new JLabel();
         imgTest.setIcon(readScreenImg());
