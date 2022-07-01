@@ -59,7 +59,7 @@ public class InputReader implements MouseListener, KeyListener {
     @Override
     public void mousePressed(MouseEvent e) {
         if (client != null) {
-            client.sendMsg(new Message<MouseEvent>(Message.Type.MOUSE_RELEASE, e));
+            client.sendMsg(new Message<MouseEvent>(Message.Type.MOUSE_CLICK, e));
         } else {
             System.out.println("Mouse press at x: " + e.getX() + ", y: " + e.getY());
         }
@@ -68,7 +68,7 @@ public class InputReader implements MouseListener, KeyListener {
     @Override
     public void mouseReleased(MouseEvent e) {
         if (client != null) {
-            client.sendMsg(new Message<MouseEvent>(Message.Type.MOUSE_CLICK, e));
+            client.sendMsg(new Message<MouseEvent>(Message.Type.MOUSE_RELEASE, e));
         } else {
             System.out.println("Mouse release at x: " + e.getX() + ", y: " + e.getY());
         }

@@ -13,8 +13,10 @@ public class Remote extends Base {
     ServerSocket serverSocket;
     Rectangle screenRect;
     Robot robot;
-    MyImage curScreen;
     MyImage lastSentScreen;
+
+    int clientReqWidth;
+    int clientReqHeight;
 
     public Remote(int targetPort) {
         try {
@@ -29,6 +31,9 @@ public class Remote extends Base {
             e.printStackTrace();
         }
         screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+        // Set some value to start
+        clientReqWidth = (int)screenRect.getWidth();
+        clientReqHeight = (int)screenRect.getHeight();
     }
 
     @Override
@@ -58,14 +63,10 @@ public class Remote extends Base {
             robot.keyRelease((Integer)lastMsg.getData());
         }
         if (lastMsg.getType().equals(Message.Type.MOUSE_CLICK)) {
-            MouseEvent mEvent = (MouseEvent)lastMsg.getData();
-            robot.mouseMove(mEvent.getX(), mEvent.getY());
-            robot.mousePress(MouseEvent.getMaskForButton(mEvent.getButton()));
+            actionMouseMsg((MouseEvent)lastMsg.getData(), true);
         }
         if (lastMsg.getType().equals(Message.Type.MOUSE_RELEASE)) {
-            MouseEvent mEvent = (MouseEvent)lastMsg.getData();
-            robot.mouseMove(mEvent.getX(), mEvent.getY());
-            robot.mouseRelease(MouseEvent.getMaskForButton(mEvent.getButton()));
+            actionMouseMsg((MouseEvent)lastMsg.getData(), false);
         }
     }
 
@@ -78,11 +79,19 @@ public class Remote extends Base {
         BufferedImage screenCap = robot.createScreenCapture(screenRect);
         if (data[0].isEmpty()) {
             sendScreenImg(new MyImage(screenCap));
-        } else if (data.length == 1) {
-            sendScreenImg(MyImage.resize(new MyImage(screenCap), Integer.valueOf(data[0])));
-        } else if (data.length == 2) {
-            sendScreenImg(MyImage.resize(new MyImage(screenCap),
-                            Integer.valueOf(data[0]), Integer.valueOf(data[1])));
+            return;
+        }
+        clientReqWidth = Integer.valueOf(data[0]);
+        if (data.length == 1) {
+            sendScreenImg(MyImage.resize(new MyImage(screenCap), clientReqWidth));
+            // Calculate height for mouse position adjustments
+            float ratio = (float)(screenRect.getWidth() / clientReqWidth);
+            clientReqHeight = (int)(screenRect.getHeight() / ratio);
+            return;
+        }
+        clientReqHeight = Integer.valueOf(data[1]);
+        if (data.length == 2) {
+            sendScreenImg(MyImage.resize(new MyImage(screenCap), clientReqWidth, clientReqHeight));
         }
     }
 
@@ -100,4 +109,22 @@ public class Remote extends Base {
         }
     }
 
+    private int correctMouseX(int x, float ratio) {
+        return (int)(x * ratio);
+    }
+
+    private int correctMouseY(int y, float ratio) {
+        return (int)(y * ratio);
+    }
+
+    private void actionMouseMsg(MouseEvent e, boolean pressed) {
+        float xRatio = (float)(screenRect.getWidth() / clientReqWidth);
+        float yRatio = (float)(screenRect.getHeight() / clientReqHeight);
+        robot.mouseMove(correctMouseX(e.getX(), xRatio), correctMouseY(e.getY(), yRatio));
+        if (pressed) {
+            robot.mousePress(MouseEvent.getMaskForButton(e.getButton()));
+        } else {
+            robot.mouseRelease(MouseEvent.getMaskForButton(e.getButton()));
+        }
+    }
 }
