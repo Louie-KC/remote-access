@@ -10,6 +10,9 @@ import javax.swing.JLabel;
 import java.time.Instant;
 import java.time.Duration;
 
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowAdapter;
+
 public class Client extends Base {
     InputReader inputReader;
     JFrame frame;
@@ -31,11 +34,20 @@ public class Client extends Base {
     public void run() {
         JFrame frame = new JFrame("Client test");
         frame.setSize(WIDTH,HEIGHT);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.setVisible(true);
 
         frame.addKeyListener(inputReader);
         frame.addMouseListener(inputReader);
+        frame.addWindowListener(new WindowAdapter() {  // Frame/window closing procedure
+            @Override
+            public void windowClosing(WindowEvent event) {
+                sendMsg(new Message<String>(Message.Type.EXIT, ""));
+                System.out.println("Exit message sent");
+                frame.dispose();
+                System.exit(0);
+            }
+        });
 
         System.out.println("Sleeping 1s");
         try {

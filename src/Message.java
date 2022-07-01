@@ -8,7 +8,8 @@ public class Message<T> implements Serializable {
         KEY_PRESS,
         KEY_RELEASE,
         MOUSE_CLICK,
-        MOUSE_RELEASE
+        MOUSE_RELEASE,
+        EXIT
     }
 
     private Type type;

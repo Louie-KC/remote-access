@@ -43,6 +43,10 @@ public class Remote extends Base {
      * process the message.
      */
     private void actionLastMsg() {
+        if (lastMsg.getType().equals(Message.Type.EXIT)) {
+            System.out.println("Exit message received");
+            System.exit(0);
+        }
         if (lastMsg.getType().equals(Message.Type.IMG_REQUEST)) {
             String dimensions[] = ((String)lastMsg.getData()).split(" ");
             sendScreenImg(Integer.valueOf(dimensions[0]), Integer.valueOf(dimensions[1]));
