@@ -5,6 +5,7 @@ import java.io.ObjectOutputStream;
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 
@@ -13,7 +14,7 @@ public class Remote extends Base {
     Rectangle screenRect;
     Robot robot;
     MyImage curScreen;
-    MyImage lastScreen;
+    MyImage lastSentScreen;
 
     public Remote(int targetPort) {
         try {
@@ -23,7 +24,7 @@ public class Remote extends Base {
             objOutStream = new ObjectOutputStream(socket.getOutputStream());
             serverSocket.close();
             robot = new Robot();
-            lastScreen = new MyImage(new byte[] {});  // blank
+            lastSentScreen = new MyImage(new byte[] {});  // blank
         } catch (IOException | AWTException e) {
             e.printStackTrace();
         }
@@ -48,8 +49,7 @@ public class Remote extends Base {
             System.exit(0);
         }
         if (lastMsg.getType().equals(Message.Type.IMG_REQUEST)) {
-            String dimensions[] = ((String)lastMsg.getData()).split(" ");
-            sendScreenImg(Integer.valueOf(dimensions[0]), Integer.valueOf(dimensions[1]));
+            sendScreen((String)lastMsg.getData());
         }
         if (lastMsg.getType().equals(Message.Type.KEY_PRESS)) {
             robot.keyPress((Integer)lastMsg.getData());
@@ -73,27 +73,31 @@ public class Remote extends Base {
      * Captures the current (entire) screen, and sends as ImageIcon in a Message
      * via the ObjectOutputStream.
      */
-    private void sendScreenImg() {
-        MyImage img = new MyImage(robot.createScreenCapture(screenRect));
-        sendMsg(new Message<MyImage>(Message.Type.IMG_RESPONSE, img));
-        System.out.println("Screen capture message sent");
+    private void sendScreen(String msgData) {
+        String[] data = msgData.split(" ");
+        BufferedImage screenCap = robot.createScreenCapture(screenRect);
+        if (data[0].isEmpty()) {
+            sendScreenImg(new MyImage(screenCap));
+        } else if (data.length == 1) {
+            sendScreenImg(MyImage.resize(new MyImage(screenCap), Integer.valueOf(data[0])));
+        } else if (data.length == 2) {
+            sendScreenImg(MyImage.resize(new MyImage(screenCap),
+                            Integer.valueOf(data[0]), Integer.valueOf(data[1])));
+        }
     }
 
     /**
-     * Captures the current (entire) screen, resizing to the specified width and height.
-     * Creates a new Message containing the resized screencapture, and sends via sendMsg method.
-     * @param width resize width
-     * @param height resize height
+     * Wraps and sends a MyImage (screen) image if the screen has changed since
+     * the last sent image
+     * @param img
      */
-    private void sendScreenImg(int width, int height) {
-        MyImage img = new MyImage(robot.createScreenCapture(screenRect));
-        MyImage resized = MyImage.resize(img, width, height);
-        if (resized.sameAs(lastScreen)) {
+    private void sendScreenImg(MyImage img) {
+        if (img.sameAs(lastSentScreen)) {
             sendMsg(new Message<String>(Message.Type.IMG_NO_UPDATE, ""));
         } else {
-            sendMsg(new Message<MyImage>(Message.Type.IMG_RESPONSE, resized));
+            sendMsg(new Message<MyImage>(Message.Type.IMG_RESPONSE, img));
+            lastSentScreen = img;
         }
-        lastScreen = resized;
     }
 
 }

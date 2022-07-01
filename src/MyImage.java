@@ -61,6 +61,23 @@ public class MyImage implements Serializable {
     }
 
     /**
+     * Retrieves the stored image as a ImageIcon resized to a given width, maintaining
+     * the original aspect ratio.
+     * @param width
+     * @return maintained aspect ratio, resized ImageIcon
+     */
+    public ImageIcon getImageIcon(int width) {
+        ImageIcon og = getImageIcon();
+        // cast one value to a float, otherwise int div occurs
+        float ratio = (float)og.getIconWidth() / og.getIconHeight();
+        int height = (int)(width / ratio);
+        if (og.getIconWidth() == width && og.getIconHeight() == height) {
+            return og;
+        }
+        return getImageIcon(width, height);
+    }
+
+    /**
      * Retrieves the stored image as a resized ImageIcon.
      * @param width
      * @param height
@@ -94,6 +111,19 @@ public class MyImage implements Serializable {
             }
         }
         return true;
+    }
+
+    /**
+     * Resizes a MyImage instance (img) to a specified width maintaing its original
+     * aspect ratio. Calculates appropriate height to do so.
+     * @param img
+     * @param width
+     * @return resized MyImage instance, maintained aspect ratio
+     */
+    public static MyImage resize(MyImage img, int width)  {
+        ImageIcon icon = img.getImageIcon(width);
+        // BufferedImage bufImg = new BufferedImage(icon);
+        return new MyImage(icon);
     }
 
     /**

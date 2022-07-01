@@ -59,7 +59,7 @@ public class Client extends Base {
 
         while (true) {
             Instant loopStart = Instant.now();
-            sendMsg(new Message<String>(Message.Type.IMG_REQUEST, WIDTH + " " + HEIGHT));
+            sendMsg(new Message<String>(Message.Type.IMG_REQUEST, WIDTH + ""));
             if (!receiveMsg()) { System.exit(0); }
             ImageIcon receivedScreenIcon = readScreenImg();
             if (receivedScreenIcon != null) {  // If an update was received
@@ -84,7 +84,7 @@ public class Client extends Base {
     private ImageIcon readScreenImg() {
         if (lastMsg != null && lastMsg.getType().equals(Message.Type.IMG_RESPONSE)) {
             if (lastMsg.getData() instanceof MyImage) {
-                return ((MyImage)lastMsg.getData()).getImageIcon(WIDTH, HEIGHT);
+                return ((MyImage)lastMsg.getData()).getImageIcon();
             }
         }
         if (lastMsg.getType().equals(Message.Type.IMG_NO_UPDATE)) {
