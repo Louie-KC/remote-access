@@ -2,25 +2,17 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-
 import java.time.Instant;
 import java.time.Duration;
-
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
 
 public class Client extends Base {
-    InputReader inputReader;
-    JFrame frame;
-    private final int WIDTH = 800;
-    private final int HEIGHT = 600;
+    Window displayWindow;
+    final int WIDTH = 800;
+    final int HEIGHT = 600;
     
     public Client(String targetIP, int targetPort) {
-        inputReader = new InputReader(this);
         try {
             socket = new Socket(targetIP, targetPort);
             objOutStream = new ObjectOutputStream(socket.getOutputStream());
@@ -28,44 +20,35 @@ public class Client extends Base {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public void run() {
-        JFrame frame = new JFrame("Client test");
-        frame.setSize(WIDTH,HEIGHT);
-        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        frame.setVisible(true);
-
-        frame.addKeyListener(inputReader);
-        frame.addMouseListener(inputReader);
-        frame.addWindowListener(new WindowAdapter() {  // Frame/window closing procedure
+        displayWindow = new Window(this, new InputReader(this));
+        displayWindow.setDefaultCloseOperation(0);  // 0 = JFrame.DO_NOTHING_ON_CLOSE
+        displayWindow.addWindowListener(new WindowAdapter() {  // Set window close operation
             @Override
             public void windowClosing(WindowEvent event) {
                 sendMsg(new Message<String>(Message.Type.EXIT, ""));
                 System.out.println("Exit message sent");
-                frame.dispose();
                 System.exit(0);
             }
         });
+    }
 
+    @Override
+    public void run() {
         System.out.println("Sleeping 1s");
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.getMessage();
         }
-        JLabel screenImageLabel = new JLabel();
 
         while (true) {
             Instant loopStart = Instant.now();
             sendMsg(new Message<String>(Message.Type.IMG_REQUEST, WIDTH + ""));
             if (!receiveMsg()) { System.exit(0); }
-            ImageIcon receivedScreenIcon = readScreenImg();
-            if (receivedScreenIcon != null) {  // If an update was received
-                screenImageLabel.setIcon(receivedScreenIcon);
-                frame.add(screenImageLabel);
-                frame.pack();
+            MyImage receivedScreenImg = readScreenImg();
+            if (receivedScreenImg != null) {  // If an update was received, set img and repaint
+                displayWindow.setScreenImage(receivedScreenImg);
+                displayWindow.repaint();
             }
             Instant loopEnd = Instant.now();
             try {
@@ -78,20 +61,16 @@ public class Client extends Base {
     }
 
     /**
-     * Checks for and reads an ImageIcon from the last received message.
-     * @return ImageIcon if present, null otherwise.
+     * Checks last message for a MyImage instance and returns it.
+     * @return MyImage if present, null otherwise.
      */
-    private ImageIcon readScreenImg() {
+    private MyImage readScreenImg() {
         if (lastMsg != null && lastMsg.getType().equals(Message.Type.IMG_RESPONSE)) {
             if (lastMsg.getData() instanceof MyImage) {
-                return ((MyImage)lastMsg.getData()).getImageIcon();
+                // return ((MyImage)lastMsg.getData()).getBufferedImage();
+                return ((MyImage)lastMsg.getData());
             }
         }
-        if (lastMsg.getType().equals(Message.Type.IMG_NO_UPDATE)) {
-            System.out.println("Screen no update msg received");
-            return null;
-        }
-        System.out.println("readScreenImg: invalid msg");
         return null;
     }
 }
