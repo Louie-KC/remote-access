@@ -8,13 +8,14 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
+import java.time.Instant;
+import java.time.Duration;
 
 public class Remote extends Base {
     ServerSocket serverSocket;
     Rectangle screenRect;
     Robot robot;
     MyImage lastSentScreen;
-
     int clientReqWidth;
     int clientReqHeight;
 
@@ -26,7 +27,7 @@ public class Remote extends Base {
             objOutStream = new ObjectOutputStream(socket.getOutputStream());
             serverSocket.close();
             robot = new Robot();
-            lastSentScreen = new MyImage(new byte[] {});  // blank
+            lastSentScreen = null;  // blank
         } catch (IOException | AWTException e) {
             e.printStackTrace();
         }
@@ -40,7 +41,10 @@ public class Remote extends Base {
     public void run() {
         while (true) {
             if (!receiveMsg()) { System.exit(0); }
+            Instant actionStart = Instant.now();
             actionLastMsg();
+            long duration = Duration.between(actionStart, Instant.now()).toMillis();
+            System.out.println("--> Run loop: " + duration + "ms\n");
         }
     }
 
@@ -71,33 +75,40 @@ public class Remote extends Base {
     }
 
     /**
-     * Captures the current (entire) screen, and sends as ImageIcon in a Message
-     * via the ObjectOutputStream.
+     * Captures the current (entire) screen, and sends it as a MyImage instance wrapped by the 
+     * Message class via the ObjectOutputStream.
      */
     private void sendScreen(String msgData) {
         String[] data = msgData.split(" ");
+        Instant begin = Instant.now();
         BufferedImage screenCap = robot.createScreenCapture(screenRect);
+        long duration = Duration.between(begin, Instant.now()).toMillis();
+        System.out.println("sendScreen cap: " + duration +"ms");
         if (data[0].isEmpty()) {
             sendScreenImg(new MyImage(screenCap));
             return;
         }
         clientReqWidth = Integer.valueOf(data[0]);
         if (data.length == 1) {
-            sendScreenImg(MyImage.resize(new MyImage(screenCap), clientReqWidth));
+            sendScreenImg(new MyImage(MyImage.resizeToBytes(screenCap, clientReqWidth)));
             // Calculate height for mouse position adjustments
             float ratio = (float)(screenRect.getWidth() / clientReqWidth);
             clientReqHeight = (int)(screenRect.getHeight() / ratio);
+            duration = Duration.between(begin, Instant.now()).toMillis();
+            System.out.println("sendScreen: " + duration +"ms");
             return;
         }
         clientReqHeight = Integer.valueOf(data[1]);
         if (data.length == 2) {
-            sendScreenImg(MyImage.resize(new MyImage(screenCap), clientReqWidth, clientReqHeight));
+            sendScreenImg(new MyImage(MyImage.resizeToBytes(screenCap, clientReqWidth, clientReqHeight)));
+            duration = Duration.between(begin, Instant.now()).toMillis();
+            System.out.println("sendScreen: " + duration + "ms");
         }
     }
 
     /**
-     * Wraps and sends a MyImage (screen) image if the screen has changed since
-     * the last sent image
+     * Sends a MyImage instance if it is different to the last sent image. Otherwise
+     * sends an IMG_NO_UPDATE message.
      * @param img
      */
     private void sendScreenImg(MyImage img) {
