@@ -22,14 +22,24 @@ public class InputReader implements MouseListener, KeyListener {
         client = c;
     }
 
+    private int convertKeyCode(int keyCode) {
+        if (!client.getRemoteOnSameOS()) {
+            if (keyCode == KeyEvent.VK_META) { return KeyEvent.VK_WINDOWS; }  // CMD to Start/Win
+            if (keyCode == KeyEvent.VK_WINDOWS) { return KeyEvent.VK_META; }  // Start/Win to CMD
+        }
+        return keyCode;
+    }
+
     @Override
     public void keyTyped(KeyEvent e) {}
 
     @Override
     public void keyPressed(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_UNDEFINED) { return; }  // prevent IllegalArg exceptions
         activeKeys.putIfAbsent(e.getKeyCode(), false);
         if (client != null && !activeKeys.get(e.getKeyCode())) {
-            client.sendMsg(new Message<Integer>(Message.Type.KEY_PRESS, e.getKeyCode()));
+            // client.sendMsg(new Message<Integer>(Message.Type.KEY_PRESS, e.getKeyCode()));
+            client.sendMsg(new Message<Integer>(Message.Type.KEY_PRESS, convertKeyCode(e.getKeyCode())));
             System.out.println("KeyPressed msg sent");
         } else if (!activeKeys.get(e.getKeyCode())) {
             System.out.println("KeyPressed: " + e.getKeyCode());
@@ -39,6 +49,7 @@ public class InputReader implements MouseListener, KeyListener {
 
     @Override
     public void keyReleased(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_UNDEFINED) { return; }  // prevent IllegalArg exceptions
         // program may be started with a key pressed, which won't be in the map
         activeKeys.putIfAbsent(e.getKeyCode(), true);
         if (client != null) {
@@ -46,7 +57,7 @@ public class InputReader implements MouseListener, KeyListener {
                 System.out.println("Key " + e.getKeyCode() + " was not active");
                 return;
             }
-            client.sendMsg(new Message<Integer>(Message.Type.KEY_RELEASE, e.getKeyCode()));
+            client.sendMsg(new Message<Integer>(Message.Type.KEY_RELEASE, convertKeyCode(e.getKeyCode())));
         } else {
             System.out.println("KeyReleased: " + e.getKeyCode());
         }

@@ -11,6 +11,8 @@ public class Client extends Base {
     Window displayWindow;
     final int WIDTH = 800;
     final int HEIGHT = 600;
+
+    boolean remoteOnSameOS;
     
     public Client(String targetIP, int targetPort) {
         try {
@@ -20,6 +22,8 @@ public class Client extends Base {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        compareOS();
+
         displayWindow = new Window(this, new InputReader(this));
         displayWindow.setDefaultCloseOperation(0);  // 0 = JFrame.DO_NOTHING_ON_CLOSE
         displayWindow.addWindowListener(new WindowAdapter() {  // Set window close operation
@@ -60,6 +64,20 @@ public class Client extends Base {
         }
     }
 
+    @Override
+    public void compareOS() {
+        String thisOS = System.getProperty("os.name").toLowerCase();
+        thisOS = thisOS.substring(0, 4);
+        if (!receiveMsg()) { System.exit(1); }
+        if (lastMsg.getType().equals(Message.Type.INFO)) {
+            if (lastMsg.getData().equals(thisOS)) {
+                remoteOnSameOS = true;
+            } else {
+                remoteOnSameOS = false;
+            }
+        }
+    }
+
     /**
      * Checks last message for a MyImage instance and returns it.
      * @return MyImage if present, null otherwise.
@@ -72,5 +90,9 @@ public class Client extends Base {
             }
         }
         return null;
+    }
+
+    public boolean getRemoteOnSameOS() {
+        return remoteOnSameOS;
     }
 }

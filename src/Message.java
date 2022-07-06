@@ -2,6 +2,7 @@ import java.io.Serializable;
 
 public class Message<T> implements Serializable {
     enum Type {
+        INFO,
         IMG_REQUEST,
         IMG_RESPONSE,
         IMG_NO_UPDATE,

@@ -12,6 +12,8 @@ public abstract class Base {
 
     public abstract void run();
 
+    public abstract void compareOS();
+
     /**
      * Sends a Message (serialisable) object via the programs ObjectOutputStream.
      * @param msg

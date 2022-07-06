@@ -31,6 +31,8 @@ public class Remote extends Base {
         } catch (IOException | AWTException e) {
             e.printStackTrace();
         }
+        compareOS();
+
         screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
         // Set some value to start
         clientReqWidth = (int)screenRect.getWidth();
@@ -46,6 +48,13 @@ public class Remote extends Base {
             long duration = Duration.between(actionStart, Instant.now()).toMillis();
             System.out.println("--> Run loop: " + duration + "ms\n");
         }
+    }
+
+    @Override
+    public void compareOS() {
+        String thisOS = System.getProperty("os.name").toLowerCase();
+        thisOS = thisOS.substring(0, 4);
+        sendMsg(new Message<String>(Message.Type.INFO, thisOS));
     }
 
     /**
