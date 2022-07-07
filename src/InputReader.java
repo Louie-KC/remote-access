@@ -1,5 +1,7 @@
 import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.event.MouseWheelEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.util.HashMap;
@@ -9,7 +11,7 @@ import javax.swing.JFrame;
  * Reads a machines mouse and keyboard inputs, and invokes the clients sendMsg method
  * with the appropriate message for an input event.
  */
-public class InputReader implements MouseListener, KeyListener {
+public class InputReader implements MouseListener, MouseWheelListener, KeyListener {
     Client client;
     HashMap<Integer, Boolean> activeKeys;
 
@@ -90,6 +92,17 @@ public class InputReader implements MouseListener, KeyListener {
 
     @Override
     public void mouseExited(MouseEvent e) {}
+
+    @Override
+    public void mouseWheelMoved(MouseWheelEvent e) {
+        if (client != null) {
+            client.sendMsg(new Message<MouseEvent>(Message.Type.MOUSE_SCROLL, e));
+        } else {
+            if (e.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL) {
+                System.out.println(e.getUnitsToScroll());
+            }
+        }
+    }
     
     public static void main(String[] args) {
         // Testing
@@ -99,6 +112,7 @@ public class InputReader implements MouseListener, KeyListener {
         frame.setVisible(true);
         InputReader test = new InputReader();
         frame.addMouseListener(test);
+        frame.addMouseWheelListener(test);
         frame.addKeyListener(test);
     }
 }

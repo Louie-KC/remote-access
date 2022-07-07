@@ -22,6 +22,7 @@ public class Window extends JFrame {
         panel = new JPanel();
         panel.setPreferredSize(new Dimension(c.WIDTH, c.HEIGHT));
         panel.addMouseListener(inputReader);  // panel mouselistener for accurate click position
+        addMouseWheelListener(inputReader);
         setContentPane(panel);
 
         panelGraphics = panel.getGraphics();

@@ -8,6 +8,7 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.time.Instant;
 import java.time.Duration;
 
@@ -62,24 +63,33 @@ public class Remote extends Base {
      * process the message.
      */
     private void actionLastMsg() {
-        if (lastMsg.getType().equals(Message.Type.EXIT)) {
-            System.out.println("Exit message received");
-            System.exit(0);
-        }
-        if (lastMsg.getType().equals(Message.Type.IMG_REQUEST)) {
-            sendScreen((String)lastMsg.getData());
-        }
-        if (lastMsg.getType().equals(Message.Type.KEY_PRESS)) {
-            robot.keyPress((Integer)lastMsg.getData());
-        }
-        if (lastMsg.getType().equals(Message.Type.KEY_RELEASE)) {
-            robot.keyRelease((Integer)lastMsg.getData());
-        }
-        if (lastMsg.getType().equals(Message.Type.MOUSE_CLICK)) {
-            actionMouseMsg((MouseEvent)lastMsg.getData(), true);
-        }
-        if (lastMsg.getType().equals(Message.Type.MOUSE_RELEASE)) {
-            actionMouseMsg((MouseEvent)lastMsg.getData(), false);
+        switch (lastMsg.getType()) {
+            case EXIT:
+                System.out.println("Exit message received");
+                try {
+                    objInStream.close();
+                    objOutStream.close();
+                    socket.close();
+                } catch (IOException e) {}
+                System.exit(0);
+                break;
+            case IMG_REQUEST:
+                sendScreen((String)lastMsg.getData());
+                break;
+            case KEY_PRESS:
+                robot.keyPress((Integer)lastMsg.getData());
+                break;
+            case KEY_RELEASE:
+                robot.keyRelease((Integer)lastMsg.getData());
+                break;
+            case MOUSE_CLICK:
+                // fall through
+            case MOUSE_RELEASE:
+                // fall through
+            case MOUSE_SCROLL:
+                actionMouseMsg((MouseEvent) lastMsg.getData(),
+                    lastMsg.getType() == Message.Type.MOUSE_CLICK);
+            default:  // Do nothing
         }
     }
 
@@ -138,6 +148,13 @@ public class Remote extends Base {
     }
 
     private void actionMouseMsg(MouseEvent e, boolean pressed) {
+        if (e instanceof MouseWheelEvent) {
+            MouseWheelEvent wheelEvent = (MouseWheelEvent) e;
+            if (wheelEvent.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL) {
+                robot.mouseWheel(wheelEvent.getUnitsToScroll());
+            }
+            return;
+        }
         float xRatio = (float)(screenRect.getWidth() / clientReqWidth);
         float yRatio = (float)(screenRect.getHeight() / clientReqHeight);
         robot.mouseMove(correctMouseX(e.getX(), xRatio), correctMouseY(e.getY(), yRatio));

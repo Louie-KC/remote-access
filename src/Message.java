@@ -10,6 +10,7 @@ public class Message<T> implements Serializable {
         KEY_RELEASE,
         MOUSE_CLICK,
         MOUSE_RELEASE,
+        MOUSE_SCROLL,
         EXIT
     }
 
