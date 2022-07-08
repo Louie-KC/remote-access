@@ -6,15 +6,18 @@ import java.time.Instant;
 import java.time.Duration;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 public class Client extends Base {
-    Window displayWindow;
-    final int WIDTH = 800;
-    final int HEIGHT = 600;
-
-    boolean remoteOnSameOS;
+    private Window window;
+    private int requestWidth;
+    private int requestHeight;
+    private int framePanelWidthDiff;
+    private boolean remoteOnSameOS;
     
     public Client(String targetIP, int targetPort) {
+        // Establish connection
         try {
             socket = new Socket(targetIP, targetPort);
             objOutStream = new ObjectOutputStream(socket.getOutputStream());
@@ -22,41 +25,48 @@ public class Client extends Base {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        compareOS();
 
-        displayWindow = new Window(this, new InputReader(this));
-        displayWindow.setDefaultCloseOperation(0);  // 0 = JFrame.DO_NOTHING_ON_CLOSE
-        displayWindow.addWindowListener(new WindowAdapter() {  // Set window close operation
+        // Init
+        compareOS();
+        requestWidth = 800;
+        requestHeight = 600;
+        window = new Window(this, new InputReader(this));
+        framePanelWidthDiff = window.getWidth() - window.getPanel().getWidth();
+
+        // Setting custom frame operations/procedures
+        window.setDefaultCloseOperation(0);  // 0 = JFrame.DO_NOTHING_ON_CLOSE
+        window.addWindowListener(new WindowAdapter() {  // Procedure on frame/window close
             @Override
             public void windowClosing(WindowEvent event) {
                 sendMsg(new Message<String>(Message.Type.EXIT, ""));
                 System.out.println("Exit message sent");
+                window.dispose();
                 System.exit(0);
+            }
+        });
+        window.addComponentListener(new ComponentAdapter() {  // Procedure on frame resize
+            @Override
+            public void componentResized(ComponentEvent e) {
+                setRequestImgSize(window.getWidth() - framePanelWidthDiff, window.getHeight());
+                window.resizeWindow();
             }
         });
     }
 
     @Override
     public void run() {
-        System.out.println("Sleeping 1s");
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.getMessage();
-        }
-
         while (true) {
             Instant loopStart = Instant.now();
-            sendMsg(new Message<String>(Message.Type.IMG_REQUEST, WIDTH + ""));
+            sendMsg(new Message<String>(Message.Type.IMG_REQUEST, getRequestImgWidth() + ""));
             if (!receiveMsg()) { System.exit(0); }
             MyImage receivedScreenImg = readScreenImg();
             if (receivedScreenImg != null) {  // If an update was received, set img and repaint
-                displayWindow.setScreenImage(receivedScreenImg);
-                displayWindow.repaint();
+                window.setScreenImage(receivedScreenImg);
+                window.repaint();
             }
             Instant loopEnd = Instant.now();
             try {
-                // Sleep for 1/3 of a second
+                // Sleep until 1/3 of a second has passed since the above loop began
                 Thread.sleep(333L - Duration.between(loopStart, loopEnd).toMillis());
             } catch (InterruptedException | IllegalArgumentException e) {
                 e.getMessage();
@@ -92,7 +102,21 @@ public class Client extends Base {
         return null;
     }
 
+    /** 
+     * Returns whether the client has discovered the remote machines OS to be 
+     * the same. Value is set by the compareOS method.
+     */
     public boolean getRemoteOnSameOS() {
         return remoteOnSameOS;
+    }
+
+    public int getRequestImgWidth() { return requestWidth; }
+
+    public int getRequestImgHeight() { return requestHeight; }
+
+    /** Updates the image size which the client requests from the remote machine */
+    public void setRequestImgSize(int newWidth, int newHeight) {
+        requestWidth = newWidth;
+        requestHeight = newHeight;
     }
 }

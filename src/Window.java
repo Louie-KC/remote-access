@@ -4,40 +4,30 @@ import java.awt.Graphics;
 import java.awt.Dimension;
 
 public class Window extends JFrame {
-    Base base;
-    JPanel panel;
-    MyImage screenImage;
-    boolean resizedForImg;
-    Graphics panelGraphics;
+    private Base base;
+    private JPanel panel;
+    private MyImage screenImage;
     
     public Window(Client c, InputReader inputReader) {
         super("Remote Access window test");
         base = c;
-        setSize(c.WIDTH, c.HEIGHT);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Default, to be changed by client
-        addKeyListener(inputReader);  // Frame takes the key listener, does not work on panel
-        setLocationByPlatform(true);
-        setVisible(true);
-
         panel = new JPanel();
-        panel.setPreferredSize(new Dimension(c.WIDTH, c.HEIGHT));
-        panel.addMouseListener(inputReader);  // panel mouselistener for accurate click position
-        addMouseWheelListener(inputReader);
         setContentPane(panel);
+        resizeWindow();
+        setVisible(true);
+        pack();
 
-        panelGraphics = panel.getGraphics();
-        resizedForImg = false;
+        // Set listeners
+        panel.addMouseListener(inputReader);  // panel mouselistener for accurate click position
+        addKeyListener(inputReader);  // Frame takes the key listener, does not work on panel
+        addMouseWheelListener(inputReader);
     }
 
     @Override
     public void paint(Graphics g) {
         if (screenImage == null) { return; }
-        panelGraphics.drawImage(screenImage.getBufferedImage(), 0, 0, null);
-        if (!resizedForImg) {
-            pack();
-            panelGraphics = panel.getGraphics();
-            resizedForImg = true;
-        }
+        panel.getGraphics().drawImage(screenImage.getBufferedImage(), 0, 0, null);
+
     }
 
     /**
@@ -46,5 +36,16 @@ public class Window extends JFrame {
      */
     public void setScreenImage(MyImage newImg) {
         screenImage = newImg;
+    }
+
+    public JPanel getPanel() { return panel; }
+
+    public void resizeWindow() {
+        if (base instanceof Client) {
+            int reqWidth = ((Client) base).getRequestImgWidth();
+            int reqHeight = ((Client) base).getRequestImgHeight();
+            panel.setPreferredSize(new Dimension(reqWidth, reqHeight));
+            panel.setMaximumSize(new Dimension(reqWidth, reqHeight));
+        }
     }
 }
