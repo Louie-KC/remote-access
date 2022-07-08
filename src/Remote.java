@@ -96,6 +96,9 @@ public class Remote extends Base {
             case MOUSE_SCROLL:
                 actionMouseMsg((MouseEvent) lastMsg.getData(),
                     lastMsg.getType() == Message.Type.MOUSE_CLICK);
+                break;
+            case FILE_INIT:
+                new Thread(new FileReceiver((Integer) lastMsg.getData(), "text.txt")).run();
             default:  // Do nothing
         }
     }
