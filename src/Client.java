@@ -9,6 +9,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
+/**
+ * The class to have an instance created and run on the client/terminal machine.
+ */
 public class Client extends Base {
     private Window window;
     private int requestWidth;
@@ -22,7 +25,8 @@ public class Client extends Base {
             socket = new Socket(targetIP, targetPort);
             objOutStream = new ObjectOutputStream(socket.getOutputStream());
             objInStream = new ObjectInputStream(socket.getInputStream());
-        } catch (IOException e) {
+            Thread.sleep(50);
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -41,6 +45,7 @@ public class Client extends Base {
                 sendMsg(new Message<String>(Message.Type.EXIT, ""));
                 System.out.println("Exit message sent");
                 window.dispose();
+                closeConnection();
                 System.exit(0);
             }
         });
@@ -58,7 +63,10 @@ public class Client extends Base {
         while (true) {
             Instant loopStart = Instant.now();
             sendMsg(new Message<String>(Message.Type.IMG_REQUEST, getRequestImgWidth() + ""));
-            if (!receiveMsg()) { System.exit(0); }
+            if (!receiveMsg()) {
+                closeConnection();
+                System.exit(0);
+            }
             MyImage receivedScreenImg = readScreenImg();
             if (receivedScreenImg != null) {  // If an update was received, set img and repaint
                 window.setScreenImage(receivedScreenImg);

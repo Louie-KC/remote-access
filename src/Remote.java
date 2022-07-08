@@ -12,13 +12,16 @@ import java.awt.event.MouseWheelEvent;
 import java.time.Instant;
 import java.time.Duration;
 
+/**
+* The class to have an instance created and run on the remote machine.
+ */
 public class Remote extends Base {
-    ServerSocket serverSocket;
-    Rectangle screenRect;
-    Robot robot;
-    MyImage lastSentScreen;
-    int clientReqWidth;
-    int clientReqHeight;
+    private ServerSocket serverSocket;
+    private Rectangle screenRect;
+    private Robot robot;
+    private MyImage lastSentScreen;
+    private int clientReqWidth;
+    private int clientReqHeight;
 
     public Remote(int targetPort) {
         try {
@@ -29,7 +32,8 @@ public class Remote extends Base {
             serverSocket.close();
             robot = new Robot();
             lastSentScreen = null;  // blank
-        } catch (IOException | AWTException e) {
+            Thread.sleep(50);
+        } catch (IOException | AWTException | InterruptedException e) {
             e.printStackTrace();
         }
         compareOS();
@@ -43,7 +47,10 @@ public class Remote extends Base {
     @Override
     public void run() {
         while (true) {
-            if (!receiveMsg()) { System.exit(0); }
+            if (!receiveMsg()) {
+                closeConnection();
+                System.exit(0);
+            }
             Instant actionStart = Instant.now();
             actionLastMsg();
             long duration = Duration.between(actionStart, Instant.now()).toMillis();
@@ -139,14 +146,35 @@ public class Remote extends Base {
         }
     }
 
+    /**
+     * Corrects a mouse X position by a ratio describing the difference in size between the images
+     * the Client receives and the actual capture size of the image before resizing and sending.
+     * @param x mouse loc from Client side (to be corrected)
+     * @param ratio the ratio between actual screen x size and client image x size
+     */
     private int correctMouseX(int x, float ratio) {
         return (int)(x * ratio);
     }
 
+     /**
+      * Corrects a mouse Y position by a ratio describing the difference in size between the images
+      * the Client receives and the actual capture size of the image before resizing and sending.
+      * @param y mouse loc from Client side (to be corrected)
+      * @param ratio the ratio between actual screen y size and client image y size
+      */
     private int correctMouseY(int y, float ratio) {
         return (int)(y * ratio);
     }
 
+    /** Invokes an appropriate method for a mouse input message received from the client */
+
+    /**
+     * Invokes the appropriate method for a received mouse input message on the robot instance.
+     * Additionally finds the x and y ratios needed for mouse location correction before 
+     * invoking the robot instances mousePress and mouseRelease methods.
+     * @param e the MouseEvent (or MouseWheelEvent) from a Message
+     * @param pressed Should the robot press or release, doesn't matter for MouseWheelEvent
+     */
     private void actionMouseMsg(MouseEvent e, boolean pressed) {
         if (e instanceof MouseWheelEvent) {
             MouseWheelEvent wheelEvent = (MouseWheelEvent) e;

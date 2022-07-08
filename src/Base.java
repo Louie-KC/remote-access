@@ -4,11 +4,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public abstract class Base {
-    Socket socket;
-    Message<?> lastMsg;
+    protected Socket socket;
+    protected Message<?> lastMsg;
 
-    ObjectInputStream objInStream;
-    ObjectOutputStream objOutStream;
+    protected ObjectInputStream objInStream;
+    protected ObjectOutputStream objOutStream;
 
     public abstract void run();
 
@@ -21,6 +21,7 @@ public abstract class Base {
      */
     public boolean sendMsg(Message<?> msg) {
         try {
+            if (!isConnected()) { return false; }
             objOutStream.writeObject(msg);
             System.out.println("Message sent type: " + msg.getType());
             return true;
@@ -36,6 +37,7 @@ public abstract class Base {
      */
     public boolean receiveMsg() {
         try {
+            if (!isConnected()) { return false; }
             lastMsg = (Message<?>)objInStream.readObject();
             return true;
         } catch (ClassNotFoundException | IOException e) {
@@ -50,5 +52,17 @@ public abstract class Base {
      */
     public boolean isConnected() {
         return socket.isConnected() && !socket.isClosed();
+    }
+
+    /** Terminate/close the socket providing the connection to the other client/remote machine. */
+    protected void closeConnection() {
+        System.out.println("closeConnection called");
+        try {
+            objInStream.reset();
+            objInStream.close();
+            objOutStream.flush();
+            objOutStream.close();
+            socket.close();
+        } catch (IOException e) {}
     }
 }
