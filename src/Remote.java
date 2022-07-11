@@ -98,7 +98,7 @@ public class Remote extends Base {
                     lastMsg.getType() == Message.Type.MOUSE_CLICK);
                 break;
             case FILE_INIT:
-                new Thread(new FileReceiver((Integer) lastMsg.getData())).run();
+                new Thread(new FileReceiver((Integer) lastMsg.getData())).start();
             default:  // Do nothing
         }
     }
@@ -168,8 +168,6 @@ public class Remote extends Base {
     private int correctMouseY(int y, float ratio) {
         return (int)(y * ratio);
     }
-
-    /** Invokes an appropriate method for a mouse input message received from the client */
 
     /**
      * Invokes the appropriate method for a received mouse input message on the robot instance.

@@ -54,7 +54,7 @@ public class FileReceiver implements Runnable {
             e.printStackTrace();
         } finally {
             try {
-                fileOutStream.close();
+                if (fileOutStream != null) { fileOutStream.close(); }
                 dataInStream.close();
                 socket.close();
             } catch (IOException e) {}

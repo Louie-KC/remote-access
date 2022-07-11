@@ -47,7 +47,8 @@ public class Window extends JFrame implements ActionListener {
                 int newPort = base.socket.getPort() + 1;
                 base.sendMsg(new Message<Integer>(Message.Type.FILE_INIT, newPort));
                 new Thread(new FileSender(base.socket.getInetAddress().getHostAddress(),
-                    newPort, this)).run();
+                    newPort, this)).start();
+                paintAll(getGraphics());  // Redraw everything
                 break;
             case EXIT_BUTTON_TEXT:
                 base.sendMsg(new Message<String>(Message.Type.EXIT, ""));
