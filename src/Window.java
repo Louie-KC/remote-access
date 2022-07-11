@@ -5,7 +5,6 @@ import javax.swing.JMenuItem;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.awt.Dimension;
 
 public class Window extends JFrame implements ActionListener {
@@ -48,7 +47,7 @@ public class Window extends JFrame implements ActionListener {
                 int newPort = base.socket.getPort() + 1;
                 base.sendMsg(new Message<Integer>(Message.Type.FILE_INIT, newPort));
                 new Thread(new FileSender(base.socket.getInetAddress().getHostAddress(),
-                    newPort, new File("./.gitignore"))).run();
+                    newPort, this)).run();
                 break;
             case EXIT_BUTTON_TEXT:
                 base.sendMsg(new Message<String>(Message.Type.EXIT, ""));

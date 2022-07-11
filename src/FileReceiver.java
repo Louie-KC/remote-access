@@ -9,11 +9,9 @@ public class FileReceiver implements Runnable {
     private Socket socket;
     private DataInputStream dataInStream;
     private FileOutputStream fileOutStream;
-    private String fileWriteDir;
 
-    public FileReceiver(int port, String writeLoc) {
+    public FileReceiver(int port) {
         try {
-            fileWriteDir = writeLoc;
             ServerSocket serverSocket = new ServerSocket(port);
             System.out.println("FileReceiver: waiting for connection");
             socket = serverSocket.accept();
@@ -24,21 +22,27 @@ public class FileReceiver implements Runnable {
         }
     }
 
-    /** Reads a file in 4KB chunks and writes to disk. */
+    /** 
+     * Reads a file in 4KB chunks and writes to disk at the working directory. 
+     * Overwrites any file that shares a name with the name of the file downloaded.
+    */
     public void receiveFile() throws Exception {
         System.out.println("FileReceiver: started download");
-        int rBytes = 0;
-        
-        fileOutStream = new FileOutputStream(fileWriteDir);
+        // Transfer prep data
         long size = dataInStream.readLong();
+        if (size == -1) { return; }  // No file/data selected by sender, stop the method
+        String fileName = dataInStream.readUTF();
+
+        // Data receive and disk write
         byte[] buffer = new byte[FOUR_KB];
-        rBytes = dataInStream.read(buffer, 0, (int) Math.min(buffer.length, size));
-        while (size > 0 && rBytes != -1) {
-            fileOutStream.write(buffer, 0, rBytes);
-            size -= rBytes;
-            rBytes = dataInStream.read(buffer, 0, (int) Math.min(buffer.length, size));
-        }
-        System.out.println("Finished downloading file");
+        fileOutStream = new FileOutputStream(fileName);
+        int bytesRead = 0;
+        do {
+            bytesRead = dataInStream.read(buffer, 0, (int) Math.min(buffer.length, size));
+            fileOutStream.write(buffer, 0, bytesRead);
+            size -= bytesRead;
+        } while (size > 0 && bytesRead != -1);
+        System.out.println("Finished downloading file: " + fileName);
     }
 
     @Override
@@ -58,7 +62,8 @@ public class FileReceiver implements Runnable {
     }
 
     public static void main(String[] args) {
-        FileReceiver test = new FileReceiver(7779, "receiveTest.txt");
+        // Test
+        FileReceiver test = new FileReceiver(7779);
         new Thread(test).run();
     }
 }
