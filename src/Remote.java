@@ -20,8 +20,6 @@ public class Remote extends Base {
     private Rectangle screenRect;
     private Robot robot;
     private MyImage lastSentScreen;
-    private int clientReqWidth;
-    private int clientReqHeight;
 
     public Remote(int targetPort) {
         try {
@@ -40,8 +38,16 @@ public class Remote extends Base {
 
         screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
         // Set some value to start
-        clientReqWidth = (int)screenRect.getWidth();
-        clientReqHeight = (int)screenRect.getHeight();
+        targetWidth = (int) screenRect.getWidth();
+        targetHeight = (int) screenRect.getHeight();
+
+        // Remote side window test
+        window = new Window(this, "Remote Access - Remote");
+        setTerminateOnWindowClose();
+        window.addMenuButton(Window.EXIT_BUTTON_TEXT);
+        window.setSize(480, 60);
+        window.setAlwaysOnTop(true);
+        window.setResizable(false);
     }
 
     @Override
@@ -70,24 +76,16 @@ public class Remote extends Base {
      * process the message.
      */
     private void actionLastMsg() {
+        checkForExitMsg();
         switch (lastMsg.getType()) {
-            case EXIT:
-                System.out.println("Exit message received");
-                try {
-                    objInStream.close();
-                    objOutStream.close();
-                    socket.close();
-                } catch (IOException e) {}
-                System.exit(0);
-                break;
             case IMG_REQUEST:
-                sendScreen((String)lastMsg.getData());
+                sendScreen((String) lastMsg.getData());
                 break;
             case KEY_PRESS:
-                robot.keyPress((Integer)lastMsg.getData());
+                robot.keyPress((Integer) lastMsg.getData());
                 break;
             case KEY_RELEASE:
-                robot.keyRelease((Integer)lastMsg.getData());
+                robot.keyRelease((Integer) lastMsg.getData());
                 break;
             case MOUSE_CLICK:
                 // fall through
@@ -117,19 +115,19 @@ public class Remote extends Base {
             sendScreenImg(new MyImage(screenCap));
             return;
         }
-        clientReqWidth = Integer.valueOf(data[0]);
+        targetWidth = Integer.valueOf(data[0]);
         if (data.length == 1) {
-            sendScreenImg(new MyImage(MyImage.resizeToBytes(screenCap, clientReqWidth)));
+            sendScreenImg(new MyImage(MyImage.resizeToBytes(screenCap, targetWidth)));
             // Calculate height for mouse position adjustments
-            float ratio = (float)(screenRect.getWidth() / clientReqWidth);
-            clientReqHeight = (int)(screenRect.getHeight() / ratio);
+            float ratio = (float)(screenRect.getWidth() / targetWidth);
+            targetHeight = (int)(screenRect.getHeight() / ratio);
             duration = Duration.between(begin, Instant.now()).toMillis();
             System.out.println("sendScreen: " + duration +"ms");
             return;
         }
-        clientReqHeight = Integer.valueOf(data[1]);
+        targetHeight = Integer.valueOf(data[1]);
         if (data.length == 2) {
-            sendScreenImg(new MyImage(MyImage.resizeToBytes(screenCap, clientReqWidth, clientReqHeight)));
+            sendScreenImg(new MyImage(MyImage.resizeToBytes(screenCap, targetWidth, targetHeight)));
             duration = Duration.between(begin, Instant.now()).toMillis();
             System.out.println("sendScreen: " + duration + "ms");
         }
@@ -156,7 +154,7 @@ public class Remote extends Base {
      * @param ratio the ratio between actual screen x size and client image x size
      */
     private int correctMouseX(int x, float ratio) {
-        return (int)(x * ratio);
+        return (int) (x * ratio);
     }
 
      /**
@@ -166,7 +164,7 @@ public class Remote extends Base {
       * @param ratio the ratio between actual screen y size and client image y size
       */
     private int correctMouseY(int y, float ratio) {
-        return (int)(y * ratio);
+        return (int) (y * ratio);
     }
 
     /**
@@ -184,8 +182,8 @@ public class Remote extends Base {
             }
             return;
         }
-        float xRatio = (float)(screenRect.getWidth() / clientReqWidth);
-        float yRatio = (float)(screenRect.getHeight() / clientReqHeight);
+        float xRatio = (float) (screenRect.getWidth() / targetWidth);
+        float yRatio = (float) (screenRect.getHeight() / targetHeight);
         robot.mouseMove(correctMouseX(e.getX(), xRatio), correctMouseY(e.getY(), yRatio));
         if (pressed) {
             robot.mousePress(MouseEvent.getMaskForButton(e.getButton()));

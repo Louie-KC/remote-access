@@ -16,19 +16,23 @@ public class Window extends JFrame implements ActionListener {
     private MyImage screenImage;
     private JMenuBar menuBar;
     
-    public Window(Client c, InputReader inputReader) {
-        super("Remote Access window test");
+    public Window(Base c, String frameTitle) {
+        super(frameTitle);
         base = c;
         // Create frames menubar
         menuBar = new JMenuBar();
         menuBar.setVisible(true);
         setJMenuBar(menuBar);
+        setVisible(true);
+    }
 
+    public Window(Base c, String frameTitle, InputReader inputReader) {
+        this(c, frameTitle);
         // Setup JPanel with Window JFrame
         panel = new JPanel();
         setContentPane(panel);
         resizeWindow();
-        setVisible(true);
+        // setVisible(true);
         pack();
 
         // Set input listeners

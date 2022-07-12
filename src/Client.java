@@ -4,8 +4,6 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.time.Instant;
 import java.time.Duration;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowAdapter;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
@@ -13,9 +11,6 @@ import java.awt.event.ComponentEvent;
  * The class to have an instance created and run on the client/terminal machine.
  */
 public class Client extends Base {
-    private Window window;
-    private int requestWidth;
-    private int requestHeight;
     private int framePanelWidthDiff;
     private boolean remoteOnSameOS;
     
@@ -32,23 +27,13 @@ public class Client extends Base {
 
         // Init
         compareOS();
-        requestWidth = 800;
-        requestHeight = 600;
-        window = new Window(this, new InputReader(this));
+        targetWidth = 800;
+        targetHeight = 600;
+        window = new Window(this, "Remote Access - Client", new InputReader(this));
         framePanelWidthDiff = window.getWidth() - window.getPanel().getWidth();
 
         // Setting custom frame operations/procedures
-        window.setDefaultCloseOperation(0);  // 0 = JFrame.DO_NOTHING_ON_CLOSE
-        window.addWindowListener(new WindowAdapter() {  // Procedure on frame/window close
-            @Override
-            public void windowClosing(WindowEvent event) {
-                sendMsg(new Message<String>(Message.Type.EXIT, ""));
-                System.out.println("Exit message sent");
-                window.dispose();
-                closeConnection();
-                System.exit(0);
-            }
-        });
+        setTerminateOnWindowClose();
         window.addComponentListener(new ComponentAdapter() {  // Procedure on frame resize
             @Override
             public void componentResized(ComponentEvent e) {
@@ -68,8 +53,8 @@ public class Client extends Base {
             sendMsg(new Message<String>(Message.Type.IMG_REQUEST, getRequestImgWidth() + ""));
             if (!receiveMsg()) {
                 closeConnection();
-                System.exit(0);
             }
+            checkForExitMsg();
             MyImage receivedScreenImg = readScreenImg();
             if (receivedScreenImg != null) {  // If an update was received, set img and repaint
                 window.setScreenImage(receivedScreenImg);
@@ -106,8 +91,7 @@ public class Client extends Base {
     private MyImage readScreenImg() {
         if (lastMsg != null && lastMsg.getType().equals(Message.Type.IMG_RESPONSE)) {
             if (lastMsg.getData() instanceof MyImage) {
-                // return ((MyImage)lastMsg.getData()).getBufferedImage();
-                return ((MyImage)lastMsg.getData());
+                return ((MyImage) lastMsg.getData());
             }
         }
         return null;
@@ -121,13 +105,13 @@ public class Client extends Base {
         return remoteOnSameOS;
     }
 
-    public int getRequestImgWidth() { return requestWidth; }
+    public int getRequestImgWidth() { return targetWidth; }
 
-    public int getRequestImgHeight() { return requestHeight; }
+    public int getRequestImgHeight() { return targetHeight; }
 
     /** Updates the image size which the client requests from the remote machine */
     public void setRequestImgSize(int newWidth, int newHeight) {
-        requestWidth = newWidth;
-        requestHeight = newHeight;
+        targetWidth = newWidth;
+        targetHeight = newHeight;
     }
 }
