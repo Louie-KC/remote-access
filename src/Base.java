@@ -1,5 +1,8 @@
 import java.io.IOException;
 import java.net.Socket;
+
+import javax.swing.JFrame;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -57,6 +60,7 @@ public abstract class Base {
     /** Terminate/close the socket providing the connection to the other client/remote machine. */
     protected void closeConnection() {
         System.out.println("closeConnection called");
+        sendMsg(new Message<String>(Message.Type.EXIT, ""));
         try {
             objInStream.reset();
             objInStream.close();
@@ -64,5 +68,21 @@ public abstract class Base {
             objOutStream.close();
             socket.close();
         } catch (IOException e) {}
+        System.exit(0);
+    }
+
+    /** Start file sending process */
+    void beginFileSending() {
+        int newPort = socket.getPort() + 1;
+        sendMsg(new Message<Integer>(Message.Type.FILE_INIT, newPort));
+        JFrame frame = new JFrame();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        new Thread(new FileSender(socket.getInetAddress().getHostAddress(),
+            newPort, frame)).start();
+    }
+
+    /** Start the file receiving process */
+    void beginFileReceiving() {
+        new Thread(new FileReceiver((Integer) lastMsg.getData())).start();
     }
 }

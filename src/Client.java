@@ -56,6 +56,9 @@ public class Client extends Base {
                 window.resizeWindow();
             }
         });
+        // Create window menu items
+        window.addMenuButton(Window.SEND_FILE);
+        window.addMenuButton(Window.EXIT_BUTTON_TEXT);
     }
 
     @Override

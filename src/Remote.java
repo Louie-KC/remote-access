@@ -98,7 +98,7 @@ public class Remote extends Base {
                     lastMsg.getType() == Message.Type.MOUSE_CLICK);
                 break;
             case FILE_INIT:
-                new Thread(new FileReceiver((Integer) lastMsg.getData())).start();
+                beginFileReceiving();
             default:  // Do nothing
         }
     }
