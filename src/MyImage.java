@@ -8,16 +8,29 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
+import javax.imageio.stream.ImageOutputStream;
+
+// local testing
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.Rectangle;
+import javax.swing.JFrame;
 
 /**
  * An extension to the java.awt.image.BufferedImage built in class, adding features
  * such as resizing and (de)serialisation for transfer via socket communication.
  */
 public class MyImage implements Serializable {
-    static final String FORMAT = "jpg";
+    static final String FORMAT = "JPG";
     private byte[] data;
     private int knownWidth;
     private int knownHeight;
+
+    private static boolean log = false;
 
     public MyImage(byte[] imgData) {
         data = imgData;
@@ -27,7 +40,8 @@ public class MyImage implements Serializable {
     }
 
     public MyImage(BufferedImage img) {
-        data = MyImage.serialise(img);
+        // data = MyImage.serialise(img);
+        data = MyImage.jpgFullSerialise(img);
         knownWidth = img.getWidth();
         knownHeight = img.getHeight();
     }
@@ -74,7 +88,8 @@ public class MyImage implements Serializable {
     public static BufferedImage resize(BufferedImage img, int width) {
         float ratio = (float) img.getWidth() / img.getHeight();
         int height = (int) (width / ratio);
-        return MyImage.resize(img, width, height);
+        return MyImage.progressiveResize(img, width, height);
+        // return MyImage.directResize(img, width, height);
     }
 
     /**
@@ -85,12 +100,45 @@ public class MyImage implements Serializable {
      * @param height Resize height
      * @return Resized BufferedImage
      */
-    public static BufferedImage resize(BufferedImage img, int width, int height) {
+    public static BufferedImage directResize(BufferedImage img, int width, int height) {
+        Instant begin = Instant.now();
+
         double xScale = (double) width / img.getWidth();
         double yScale = (double) height / img.getHeight();
         AffineTransform transform = AffineTransform.getScaleInstance(xScale, yScale);
-        AffineTransformOp scaler = new AffineTransformOp(transform, AffineTransformOp.TYPE_BILINEAR);
-        return scaler.filter(img, new BufferedImage(width, height, img.getType()));
+        AffineTransformOp scaler = new AffineTransformOp(transform, AffineTransformOp.TYPE_BICUBIC);
+        BufferedImage ret = scaler.filter(img, new BufferedImage(width, height, img.getType()));
+        if (log) {
+            long duration = Duration.between(begin, Instant.now()).toMillis();
+            System.out.println("directResize: " + duration + "ms");
+        }
+        return ret;
+    }
+
+    /**
+     * Repeatedly halves the image size while the target size is less than half of the images
+     * current size, then resizes to the specified size. Done to preserve detail in the image.
+     * @param img The image to be resized
+     * @param width Resize width
+     * @param height Resize height
+     * @return Resized BufferedImage
+     */
+    public static BufferedImage progressiveResize(BufferedImage img, int width, int height) {
+        Instant begin = Instant.now();
+        
+        double xScale = (double) width / img.getWidth();
+        double yScale = (double) height / img.getHeight();
+        while (xScale < 0.5f && yScale < 0.5f) {
+            img = MyImage.directResize(img, img.getWidth()/2, img.getHeight()/2);
+            xScale = (double) width / img.getWidth();
+            yScale = (double) height / img.getHeight();
+        }
+        img = MyImage.directResize(img, width, height);
+        if (log) {
+            long duration = Duration.between(begin, Instant.now()).toMillis();
+            System.out.println("progressiveResize: " + duration + "ms");
+        }
+        return img;
     }
 
     /**
@@ -121,16 +169,50 @@ public class MyImage implements Serializable {
      */
     private static byte[] serialise(BufferedImage img) {
         Instant begin = Instant.now();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(img, FORMAT, baos);
-            long duration = Duration.between(begin, Instant.now()).toMillis();
-            System.out.println("serialise: " + duration + "ms");
-            return baos.toByteArray();
+            if (log) {
+                long duration = Duration.between(begin, Instant.now()).toMillis();
+                System.out.println("serialise: " + duration + "ms");
+                System.out.println("serialise size (bytes): " + baos.size());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return new byte[0];
+        return baos.toByteArray();
+    }
+
+    /**
+     * Serialise a BufferedImage to JPG format at fully quality compression. Returns the
+     * byte data for the resulting JPG, to be brought back to a MyImage with the
+     * MyImage.deserialise(byte[]) method.
+     * @param img the Image to be serialised
+     * @return Image byte array
+     */
+    private static byte[] jpgFullSerialise(BufferedImage img) {
+        if (!FORMAT.equals("JPG")) { return new byte[0]; }
+        Instant begin = Instant.now();
+
+        JPEGImageWriteParam param = new JPEGImageWriteParam(null);
+        param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+        param.setCompressionQuality(1f);
+
+        ImageWriter writer = ImageIO.getImageWritersByFormatName(FORMAT).next();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            ImageOutputStream imgOutStream = ImageIO.createImageOutputStream(baos);
+            writer.setOutput(imgOutStream);
+            writer.write(img);
+        } catch (IOException e) { 
+            System.out.println("Error serialising");
+        }
+        if (log) {
+            long duration = Duration.between(begin, Instant.now()).toMillis();
+            System.out.println("jpgFullSerialise: " + duration + "ms");
+            System.out.println("jpgFullSerialise size (bytes): " + baos.size());
+        };
+        return baos.toByteArray();
     }
 
     /**
@@ -157,7 +239,8 @@ public class MyImage implements Serializable {
      */
     public static byte[] resizeToBytes(BufferedImage img, int width) {
         BufferedImage resized = MyImage.resize(img, width);
-        return MyImage.serialise(resized);
+        // return MyImage.serialise(resized);
+        return MyImage.jpgFullSerialise(resized);
     }
 
     /**
@@ -168,7 +251,38 @@ public class MyImage implements Serializable {
      * @return Serialised byte data for the resized image.
      */
     public static byte[] resizeToBytes(BufferedImage img, int width, int height) {
-        BufferedImage resized = MyImage.resize(img, width, height);
-        return MyImage.serialise(resized);
+        BufferedImage resized = MyImage.directResize(img, width, height);
+        // return MyImage.serialise(resized);
+        return MyImage.jpgFullSerialise(resized);
+    }
+
+    // Capture, resize, serialise and deserialise performance test
+    public static void main(String[] args) {
+        log = true;
+        int targetWidth = 800;
+        int testRuns = 100;
+        try {
+            Robot robot = new Robot();
+            Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+            JFrame frame = new JFrame();
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(targetWidth, 600);
+            frame.setVisible(true);
+            BufferedImage resizeTest = null;
+
+            Instant begin = Instant.now();
+            for (int i = 0; i < testRuns; i++) {
+                resizeTest = MyImage.resize(robot.createScreenCapture(screenRect), targetWidth);
+                // resizeTest = MyImage.deserialise(MyImage.jpgFullSerialise(resizeTest));
+                resizeTest = MyImage.deserialise(MyImage.serialise(resizeTest));
+                System.out.println();
+            }
+            long duration = Duration.between(begin, Instant.now()).toMillis();
+            System.out.println("Total duration: " + duration +
+                "\nAverage duration: " + duration/testRuns);
+            frame.getGraphics().drawImage(resizeTest, 0, 0, null);
+        } catch (AWTException e) {
+            e.printStackTrace();
+        }
     }
 }
