@@ -72,11 +72,12 @@ public class Remote extends Base {
     }
 
     /**
-     * Checks last received message and invokes the appropriate method(s) to
-     * process the message.
+     * Extends the base actionLastMsg method, handling image requests and remote
+     * user input messages.
      */
-    private void actionLastMsg() {
-        checkForExitMsg();
+    @Override
+    void actionLastMsg() {
+        super.actionLastMsg();
         switch (lastMsg.getType()) {
             case IMG_REQUEST:
                 sendScreen((String) lastMsg.getData());
@@ -94,9 +95,6 @@ public class Remote extends Base {
             case MOUSE_SCROLL:
                 actionMouseMsg((MouseEvent) lastMsg.getData(),
                     lastMsg.getType() == Message.Type.MOUSE_CLICK);
-                break;
-            case FILE_INIT:
-                beginFileReceiving();
             default:  // Do nothing
         }
     }

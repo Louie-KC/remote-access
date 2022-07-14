@@ -10,6 +10,7 @@ import java.awt.Dimension;
 public class Window extends JFrame implements ActionListener {
     static final String EXIT_BUTTON_TEXT = "Exit";
     static final String SEND_FILE = "Send file";
+    static final String RECEIVE_FILE = "Receive file";
 
     private Base base;
     private JPanel panel;
@@ -53,6 +54,9 @@ public class Window extends JFrame implements ActionListener {
         switch (e.getActionCommand()) {
             case SEND_FILE:
                 base.beginFileSending();
+                break;
+            case RECEIVE_FILE:
+                base.sendMsg(new Message<String>(Message.Type.FILE_REQ, ""));
                 break;
             case EXIT_BUTTON_TEXT:
                 base.closeConnection();

@@ -12,6 +12,7 @@ public class Message<T> implements Serializable {
         MOUSE_RELEASE,
         MOUSE_SCROLL,
         FILE_INIT,
+        FILE_REQ,
         EXIT
     }
 

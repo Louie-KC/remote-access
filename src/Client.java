@@ -43,6 +43,7 @@ public class Client extends Base {
         });
         // Create window menu items
         window.addMenuButton(Window.SEND_FILE);
+        window.addMenuButton(Window.RECEIVE_FILE);
         window.addMenuButton(Window.EXIT_BUTTON_TEXT);
     }
 
@@ -54,7 +55,7 @@ public class Client extends Base {
             if (!receiveMsg()) {
                 closeConnection();
             }
-            checkForExitMsg();
+            actionLastMsg();
             MyImage receivedScreenImg = readScreenImg();
             if (receivedScreenImg != null) {  // If an update was received, set img and repaint
                 window.setScreenImage(receivedScreenImg);

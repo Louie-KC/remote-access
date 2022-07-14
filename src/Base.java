@@ -77,17 +77,6 @@ public abstract class Base {
         } catch (IOException e) {}  // do nothing
     }
 
-    /** 
-     * Checks if the last received message is the EXIT message, invoking closeStreamsAndSocket
-     * and exits the program if EXIT.
-     */
-    void checkForExitMsg() {
-        if (lastMsg.getType().equals(Message.Type.EXIT)) {
-            closeStreamsAndSocket();
-            System.exit(0);
-        }
-    }
-
     /** Terminate/close the socket providing the connection to the other client/remote machine. */
     void closeConnection() {
         System.out.println("closeConnection called");
@@ -109,6 +98,24 @@ public abstract class Base {
     /** Start the file receiving process */
     void beginFileReceiving() {
         new Thread(new FileReceiver((Integer) lastMsg.getData())).start();
+    }
+    
+    /** Invokes an appropraite method based on the last received message. At the base handles
+     * exit messages, and file init/request messages.
+     */
+    void actionLastMsg() {
+        switch (lastMsg.getType()) {
+            case EXIT:
+                closeStreamsAndSocket();
+                break;
+            case FILE_INIT:
+                beginFileReceiving();
+                break;
+            case FILE_REQ:
+                beginFileSending();
+                break;
+            default:  // Do nothing
+        }
     }
 
     /**
