@@ -21,6 +21,9 @@ public class Remote extends Base {
     private Robot robot;
     private MyImage lastSentScreen;
 
+    private float xMouseCorrection;
+    private float yMouseCorrection;
+
     public Remote(int targetPort) {
         try {
             serverSocket = new ServerSocket(targetPort);
@@ -40,6 +43,8 @@ public class Remote extends Base {
         // Set some value to start
         targetWidth = (int) screenRect.getWidth();
         targetHeight = (int) screenRect.getHeight();
+        xMouseCorrection = 1f;
+        yMouseCorrection = 1f;
 
         // Remote side window test
         window = new Window(this, "Remote Access - Remote");
@@ -119,6 +124,7 @@ public class Remote extends Base {
             // Calculate height for mouse position adjustments
             float ratio = (float)(screenRect.getWidth() / targetWidth);
             targetHeight = (int)(screenRect.getHeight() / ratio);
+            updateMouseCorrection(targetWidth, targetHeight);
             duration = Duration.between(begin, Instant.now()).toMillis();
             System.out.println("sendScreen: " + duration +"ms");
             return;
@@ -126,6 +132,7 @@ public class Remote extends Base {
         targetHeight = Integer.valueOf(data[1]);
         if (data.length == 2) {
             sendScreenImg(new MyImage(MyImage.resizeToBytes(screenCap, targetWidth, targetHeight)));
+            updateMouseCorrection(targetWidth, targetHeight);
             duration = Duration.between(begin, Instant.now()).toMillis();
             System.out.println("sendScreen: " + duration + "ms");
         }
@@ -146,23 +153,25 @@ public class Remote extends Base {
     }
 
     /**
-     * Corrects a mouse X position by a ratio describing the difference in size between the images
-     * the Client receives and the actual capture size of the image before resizing and sending.
+     * Corrects a given mouse x position by the last knwon x mouse correction ratio.
      * @param x mouse loc from Client side (to be corrected)
-     * @param ratio the ratio between actual screen x size and client image x size
      */
-    private int correctMouseX(int x, float ratio) {
-        return (int) (x * ratio);
+    private int correctMouseX(int x) {
+        return (int) (x * xMouseCorrection);
     }
 
      /**
-      * Corrects a mouse Y position by a ratio describing the difference in size between the images
-      * the Client receives and the actual capture size of the image before resizing and sending.
+      * Corrects a given mouse y position by the last known y mouse correction ratio.
       * @param y mouse loc from Client side (to be corrected)
-      * @param ratio the ratio between actual screen y size and client image y size
       */
-    private int correctMouseY(int y, float ratio) {
-        return (int) (y * ratio);
+    private int correctMouseY(int y) {
+        return (int) (y * yMouseCorrection);
+    }
+
+    
+    private void updateMouseCorrection(int width, int height) {
+        xMouseCorrection = (float) (screenRect.getWidth() / targetWidth);
+        yMouseCorrection = (float) (screenRect.getHeight() / targetHeight);
     }
 
     /**
@@ -180,9 +189,7 @@ public class Remote extends Base {
             }
             return;
         }
-        float xRatio = (float) (screenRect.getWidth() / targetWidth);
-        float yRatio = (float) (screenRect.getHeight() / targetHeight);
-        robot.mouseMove(correctMouseX(e.getX(), xRatio), correctMouseY(e.getY(), yRatio));
+        robot.mouseMove(correctMouseX(e.getX()), correctMouseY(e.getY()));
         if (pressed) {
             robot.mousePress(MouseEvent.getMaskForButton(e.getButton()));
         } else {
