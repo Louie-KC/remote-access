@@ -4,25 +4,35 @@ import java.awt.event.MouseWheelListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
+import java.awt.Point;
 import java.util.HashMap;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 /**
  * Reads a machines mouse and keyboard inputs, and invokes the clients sendMsg method
  * with the appropriate message for an input event.
  */
-public class InputReader implements MouseListener, MouseWheelListener, KeyListener {
-    Client client;
-    HashMap<Integer, Boolean> activeKeys;
+public class InputReader implements MouseListener, MouseWheelListener, KeyListener, Runnable {
+    private Client client;
+    private HashMap<Integer, Boolean> activeKeys;
+    private JPanel panel;  // For mouse position listening
+    private boolean mousePresent;
+    private Point lastMousePos;
 
     public InputReader() {
         activeKeys = new HashMap<>(64);
+        mousePresent = false;
+        lastMousePos = new Point(-1,-1);  // to always be overwritten
     }
 
     public InputReader(Client c) {
         this();
         client = c;
     }
+
+    /** Sets the panel for mouse position tracking/listening */
+    public void setPanel(JPanel inPanel) { panel = inPanel; }
 
     private int convertKeyCode(int keyCode) {
         if (!client.getRemoteOnSameOS()) {
@@ -40,7 +50,6 @@ public class InputReader implements MouseListener, MouseWheelListener, KeyListen
         if (e.getKeyCode() == KeyEvent.VK_UNDEFINED) { return; }  // prevent IllegalArg exceptions
         activeKeys.putIfAbsent(e.getKeyCode(), false);
         if (client != null && !activeKeys.get(e.getKeyCode())) {
-            // client.sendMsg(new Message<Integer>(Message.Type.KEY_PRESS, e.getKeyCode()));
             client.sendMsg(new Message<Integer>(Message.Type.KEY_PRESS, convertKeyCode(e.getKeyCode())));
             System.out.println("KeyPressed msg sent");
         } else if (!activeKeys.get(e.getKeyCode())) {
@@ -88,10 +97,10 @@ public class InputReader implements MouseListener, MouseWheelListener, KeyListen
     }
 
     @Override
-    public void mouseEntered(MouseEvent e) {}
+    public void mouseEntered(MouseEvent e) { mousePresent = true; }
 
     @Override
-    public void mouseExited(MouseEvent e) {}
+    public void mouseExited(MouseEvent e) { mousePresent = false; }
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
@@ -102,6 +111,21 @@ public class InputReader implements MouseListener, MouseWheelListener, KeyListen
                 System.out.println(e.getUnitsToScroll());
             }
         }
+    }
+
+    @Override
+    public void run() {
+        while (client.isConnected()) {
+            if (mousePresent && !panel.getMousePosition().equals(lastMousePos)) {
+                lastMousePos = panel.getMousePosition();
+                client.sendMsg(new Message<Point>(Message.Type.MOUSE_POS, lastMousePos));
+            }
+            try {
+                Thread.sleep(50L);  // target 20 updates per second
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }     
     }
     
     public static void main(String[] args) {

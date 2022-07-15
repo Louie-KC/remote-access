@@ -33,13 +33,14 @@ public class Window extends JFrame implements ActionListener {
         panel = new JPanel();
         setContentPane(panel);
         resizeWindow();
-        // setVisible(true);
         pack();
 
         // Set input listeners
         panel.addMouseListener(inputReader);  // panel mouselistener for accurate click position
         addKeyListener(inputReader);  // Frame takes the key listener, does not work on panel
         addMouseWheelListener(inputReader);
+        inputReader.setPanel(panel);  // Mouse position listening
+        new Thread(inputReader).start();  // Mouse position sending
     }
 
     @Override

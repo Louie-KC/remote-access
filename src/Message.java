@@ -8,6 +8,7 @@ public class Message<T> implements Serializable {
         IMG_NO_UPDATE,
         KEY_PRESS,
         KEY_RELEASE,
+        MOUSE_POS,
         MOUSE_CLICK,
         MOUSE_RELEASE,
         MOUSE_SCROLL,

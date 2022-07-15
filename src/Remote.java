@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.Point;
 import java.time.Instant;
 import java.time.Duration;
 
@@ -93,6 +94,10 @@ public class Remote extends Base {
             case KEY_RELEASE:
                 robot.keyRelease((Integer) lastMsg.getData());
                 break;
+            case MOUSE_POS:
+                Point p = (Point) lastMsg.getData();
+                robot.mouseMove(correctMouseX(p.x), correctMouseY(p.y));
+                break;
             case MOUSE_CLICK:
                 // fall through
             case MOUSE_RELEASE:
@@ -168,7 +173,7 @@ public class Remote extends Base {
         return (int) (y * yMouseCorrection);
     }
 
-    
+
     private void updateMouseCorrection(int width, int height) {
         xMouseCorrection = (float) (screenRect.getWidth() / targetWidth);
         yMouseCorrection = (float) (screenRect.getHeight() / targetHeight);
