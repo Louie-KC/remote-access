@@ -31,8 +31,10 @@ public abstract class Base {
      */
     public boolean sendMsg(Message<?> msg) {
         try {
-            if (!isConnected()) { return false; }
-            objOutStream.writeObject(msg);
+            synchronized (socket) {  // Prevent socket closing between socket check & stream writing
+                if (!isConnected()) { return false; }
+                objOutStream.writeObject(msg);
+            }
             System.out.println("Message sent type: " + msg.getType());
             return true;
         } catch (IOException e) {
@@ -47,8 +49,10 @@ public abstract class Base {
      */
     public boolean receiveMsg() {
         try {
-            if (!isConnected()) { return false; }
-            lastMsg = (Message<?>) objInStream.readObject();
+            synchronized (socket) {  // Prevent socket closing between socket check & stream reading
+                if (!isConnected()) { return false; }
+                lastMsg = (Message<?>) objInStream.readObject();
+            }
             return true;
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
@@ -68,13 +72,15 @@ public abstract class Base {
     private void closeStreamsAndSocket() {
         System.out.println("Closing connection socket and streams");
         try {
-            if (objInStream != null) { objInStream.close(); }
-            if (objOutStream != null) {
-                objOutStream.flush();
-                objOutStream.close();
+            synchronized (socket) {  // Wait until no threads are communicating via the socket
+                if (objInStream != null) { objInStream.close(); }
+                if (objOutStream != null) {
+                    objOutStream.flush();
+                    objOutStream.close();
+                }
+                socket.close();
             }
-            socket.close();
-        } catch (IOException e) {}  // do nothing
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     /** Terminate/close the socket providing the connection to the other client/remote machine. */
