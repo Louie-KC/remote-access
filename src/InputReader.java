@@ -116,9 +116,10 @@ public class InputReader implements MouseListener, MouseWheelListener, KeyListen
     @Override
     public void run() {
         while (client.isConnected()) {
-            if (mousePresent && !panel.getMousePosition().equals(lastMousePos)) {
-                lastMousePos = panel.getMousePosition();
-                client.sendMsg(new Message<Point>(Message.Type.MOUSE_POS, lastMousePos));
+            Point mousePos = panel.getMousePosition();
+            if (mousePresent && mousePos != null && !mousePos.equals(lastMousePos)) {
+                client.sendMsg(new Message<Point>(Message.Type.MOUSE_POS, mousePos));
+                lastMousePos = mousePos;
             }
             try {
                 Thread.sleep(50L);  // target 20 updates per second
