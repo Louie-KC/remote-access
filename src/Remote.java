@@ -7,6 +7,7 @@ import java.awt.Robot;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.Point;
@@ -77,6 +78,19 @@ public class Remote extends Base {
         sendMsg(new Message<String>(Message.Type.INFO, thisOS));
     }
 
+    /* Uses the Remotes Robot instance to paste the systems clipboard contents. */
+    void pasteClipboardText() {
+        int ctrlOrCMD = KeyEvent.VK_CONTROL;
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            ctrlOrCMD = KeyEvent.VK_META;
+        }
+        robot.keyPress(ctrlOrCMD);
+        robot.keyPress(KeyEvent.VK_V);
+        robot.delay(5);  // Short delay to give OS time to paste
+        robot.keyRelease(ctrlOrCMD);
+        robot.keyRelease(KeyEvent.VK_V);
+    }
+
     /**
      * Extends the base actionLastMsg method, handling image requests and remote
      * user input messages.
@@ -105,13 +119,19 @@ public class Remote extends Base {
             case MOUSE_SCROLL:
                 actionMouseMsg((MouseEvent) lastMsg.getData(),
                     lastMsg.getType() == Message.Type.MOUSE_CLICK);
+                break;
+            case CLIPBOARD_DATA:
+                pasteClipboardText();
+                break;
+            case CLIPBOARD_REQUEST:
+                sendClipboardText();
             default:  // Do nothing
         }
     }
 
     /**
      * Captures the current (entire) screen, and sends it as a MyImage instance wrapped by the 
-     * Message class via the ObjectOutputStream.
+     * Message class via the ObjectOutputStream. 
      */
     private void sendScreen(String msgData) {
         String[] data = msgData.split(" ");

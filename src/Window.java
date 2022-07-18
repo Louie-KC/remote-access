@@ -11,6 +11,8 @@ public class Window extends JFrame implements ActionListener {
     static final String EXIT_BUTTON_TEXT = "Exit";
     static final String SEND_FILE = "Send file";
     static final String RECEIVE_FILE = "Receive file";
+    static final String SEND_CLIPBOARD = "Send/paste clipboard text";
+    static final String GET_CLIPBOARD = "Get remote clipboard text";
 
     private Base base;
     private JPanel panel;
@@ -58,6 +60,12 @@ public class Window extends JFrame implements ActionListener {
                 break;
             case RECEIVE_FILE:
                 base.sendMsg(new Message<String>(Message.Type.FILE_REQ, ""));
+                break;
+            case SEND_CLIPBOARD:
+                base.sendClipboardText();
+                break;
+            case GET_CLIPBOARD:
+                base.sendMsg(new Message<String>(Message.Type.CLIPBOARD_REQUEST, ""));
                 break;
             case EXIT_BUTTON_TEXT:
                 base.closeConnection();

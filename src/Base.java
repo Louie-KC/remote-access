@@ -4,7 +4,11 @@ import java.net.Socket;
 import javax.swing.JFrame;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
-
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -62,13 +66,13 @@ public abstract class Base {
 
     /**
      * Checks if the socket is connected AND is open.
-     * @return Socket connected and open status.
+     * @return Socket connected and open status. 
      */
     public boolean isConnected() {
         return socket.isConnected() && !socket.isClosed();
     }
 
-    /** Closes all streams then the Socket instance */
+    /* Closes all streams then the Socket instance */
     private void closeStreamsAndSocket() {
         System.out.println("Closing connection socket and streams");
         try {
@@ -83,7 +87,37 @@ public abstract class Base {
         } catch (IOException e) { e.printStackTrace(); }
     }
 
-    /** Terminate/close the socket providing the connection to the other client/remote machine. */
+    /**
+     * Retrieves the last item from the system clipboard if it is a String.
+     * @return Last String text from the system clipboard.
+     */
+    private String getClipboardText() {
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        String text = "";
+        try {
+            text = (String) clipboard.getData(DataFlavor.stringFlavor);
+        } catch (UnsupportedFlavorException | IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("getClipboardText(): " + text);
+        return text;
+    }
+
+    /* Sends the most recent system clipboard item to the other machine if it is a String. */
+    void sendClipboardText() {
+        sendMsg(new Message<String>(Message.Type.CLIPBOARD_DATA, getClipboardText()));
+    }
+
+    /**
+     * Sets the content of the systems clipboard to the String content sent by the other machine.
+     */
+    void setClipboardWithMsgText() {
+        if (!lastMsg.getType().equals(Message.Type.CLIPBOARD_DATA)) { return; }
+        StringSelection text = new StringSelection((String) lastMsg.getData());
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(text, text);
+    }
+
+    /* Terminate/close the socket providing the connection to the other client/remote machine. */
     void closeConnection() {
         System.out.println("closeConnection called");
         sendMsg(new Message<String>(Message.Type.EXIT, ""));
@@ -91,7 +125,7 @@ public abstract class Base {
         System.exit(0);
     }
 
-    /** Start file sending process */
+    /* Start file sending process */
     void beginFileSending() {
         int newPort = socket.getPort() + 1;
         sendMsg(new Message<Integer>(Message.Type.FILE_INIT, newPort));
@@ -101,12 +135,13 @@ public abstract class Base {
             newPort, frame)).start();
     }
 
-    /** Start the file receiving process */
+    /* Start the file receiving process */
     void beginFileReceiving() {
         new Thread(new FileReceiver((Integer) lastMsg.getData())).start();
     }
     
-    /** Invokes an appropraite method based on the last received message. At the base handles
+    /** 
+     * Invokes an appropraite method based on the last received message. At the base handles
      * exit messages, and file init/request messages.
      */
     void actionLastMsg() {
@@ -119,6 +154,12 @@ public abstract class Base {
                 break;
             case FILE_REQ:
                 beginFileSending();
+                break;
+            case CLIPBOARD_REQUEST:
+                sendClipboardText();
+                break;
+            case CLIPBOARD_DATA:
+                setClipboardWithMsgText();
                 break;
             default:  // Do nothing
         }

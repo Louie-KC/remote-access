@@ -44,6 +44,8 @@ public class Client extends Base {
         // Create window menu items
         window.addMenuButton(Window.SEND_FILE);
         window.addMenuButton(Window.RECEIVE_FILE);
+        window.addMenuButton(Window.SEND_CLIPBOARD);
+        window.addMenuButton(Window.GET_CLIPBOARD);
         window.addMenuButton(Window.EXIT_BUTTON_TEXT);
     }
 
@@ -82,6 +84,14 @@ public class Client extends Base {
             } else {
                 remoteOnSameOS = false;
             }
+        }
+    }
+
+    @Override
+    void actionLastMsg() {
+        super.actionLastMsg();
+        if (lastMsg.getType().equals(Message.Type.CLIPBOARD_DATA)) {
+            setClipboardWithMsgText();
         }
     }
 

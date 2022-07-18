@@ -14,6 +14,8 @@ public class Message<T> implements Serializable {
         MOUSE_SCROLL,
         FILE_INIT,
         FILE_REQ,
+        CLIPBOARD_DATA,
+        CLIPBOARD_REQUEST,
         EXIT
     }
 
