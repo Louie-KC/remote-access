@@ -59,16 +59,17 @@ public class Remote extends Base {
 
     @Override
     public void run() {
-        while (true) {
+        while (isConnected()) {
             if (!receiveMsg()) {
                 closeConnection();
-                System.exit(0);
+                break;
             }
             Instant actionStart = Instant.now();
             actionLastMsg();
             long duration = Duration.between(actionStart, Instant.now()).toMillis();
             System.out.println("--> Run loop: " + duration + "ms\n");
         }
+        System.exit(0);
     }
 
     @Override

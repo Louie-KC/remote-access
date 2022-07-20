@@ -51,11 +51,12 @@ public class Client extends Base {
 
     @Override
     public void run() {
-        while (true) {
+        while (isConnected()) {
             Instant loopStart = Instant.now();
             sendMsg(new Message<String>(Message.Type.IMG_REQUEST, getRequestImgWidth() + ""));
             if (!receiveMsg()) {
                 closeConnection();
+                break;
             }
             actionLastMsg();
             MyImage receivedScreenImg = readScreenImg();
@@ -71,6 +72,7 @@ public class Client extends Base {
                 e.getMessage();
             }
         }
+        System.exit(0);
     }
 
     @Override

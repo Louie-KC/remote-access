@@ -69,7 +69,9 @@ public abstract class Base {
      * @return Socket connected and open status. 
      */
     public boolean isConnected() {
-        return socket.isConnected() && !socket.isClosed();
+        synchronized (socket) {
+            return socket.isConnected() && !socket.isClosed();
+        }
     }
 
     /* Closes all streams then the Socket instance */
@@ -82,9 +84,15 @@ public abstract class Base {
                     objOutStream.flush();
                     objOutStream.close();
                 }
-                socket.close();
+                if (!socket.isClosed()) { socket.close(); }
             }
         } catch (IOException e) { e.printStackTrace(); }
+    }
+
+    /* Terminate/close the socket providing the connection to the other client/remote machine. */
+    void closeConnection() {
+        sendMsg(new Message<String>(Message.Type.EXIT, ""));
+        closeStreamsAndSocket();
     }
 
     /**
@@ -115,14 +123,6 @@ public abstract class Base {
         if (!lastMsg.getType().equals(Message.Type.CLIPBOARD_DATA)) { return; }
         StringSelection text = new StringSelection((String) lastMsg.getData());
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(text, text);
-    }
-
-    /* Terminate/close the socket providing the connection to the other client/remote machine. */
-    void closeConnection() {
-        System.out.println("closeConnection called");
-        sendMsg(new Message<String>(Message.Type.EXIT, ""));
-        closeStreamsAndSocket();
-        System.exit(0);
     }
 
     /* Start file sending process */
