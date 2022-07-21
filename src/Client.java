@@ -18,6 +18,7 @@ public class Client extends Base {
         // Establish connection
         try {
             socket = new Socket(targetIP, targetPort);
+            socket.setSoTimeout(4000);
             objOutStream = new ObjectOutputStream(socket.getOutputStream());
             objInStream = new ObjectInputStream(socket.getInputStream());
             Thread.sleep(50);

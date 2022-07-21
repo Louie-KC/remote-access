@@ -15,7 +15,7 @@ import java.time.Instant;
 import java.time.Duration;
 
 /**
-* The class to have an instance created and run on the remote machine.
+ * The class to have an instance created and run on the remote machine.
  */
 public class Remote extends Base {
     private ServerSocket serverSocket;
@@ -30,6 +30,7 @@ public class Remote extends Base {
         try {
             serverSocket = new ServerSocket(targetPort);
             socket = serverSocket.accept();
+            socket.setSoTimeout(4000);
             objInStream = new ObjectInputStream(socket.getInputStream());
             objOutStream = new ObjectOutputStream(socket.getOutputStream());
             serverSocket.close();

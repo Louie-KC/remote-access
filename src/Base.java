@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 import javax.swing.JFrame;
 import java.awt.event.WindowEvent;
@@ -58,10 +59,14 @@ public abstract class Base {
                 lastMsg = (Message<?>) objInStream.readObject();
             }
             return true;
+        } catch (SocketTimeoutException e) {
+            System.out.println("Connection lost: closing application");
+            closeStreamsAndSocket();
+            System.exit(0);
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
-            return false;
         }
+        return false;
     }
 
     /**
