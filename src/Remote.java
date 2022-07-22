@@ -114,10 +114,8 @@ public class Remote extends Base {
                 Point p = (Point) lastMsg.getData();
                 robot.mouseMove(correctMouseX(p.x), correctMouseY(p.y));
                 break;
-            case MOUSE_CLICK:
-                // fall through
-            case MOUSE_RELEASE:
-                // fall through
+            case MOUSE_CLICK:  // fall through
+            case MOUSE_RELEASE:  // fall through
             case MOUSE_SCROLL:
                 actionMouseMsg((MouseEvent) lastMsg.getData(),
                     lastMsg.getType() == Message.Type.MOUSE_CLICK);
@@ -132,37 +130,50 @@ public class Remote extends Base {
     }
 
     /**
+     * Calculate a height for a given width value that maintains the screens aspect ratio.
+     * @param width
+     * @return height value, maintaining aspect ratio
+     */
+    private int calcHeightMaintainAspectRatio(int width) {
+        float ratio = (float) (screenRect.getWidth() / width);
+        int height = (int) (screenRect.getHeight() / ratio);
+        return height;
+    }
+
+    /**
+     * Updates the size for screen images to be sent as specified by a IMG_REQUEST String.
+     * @param imgReqString data from a IMG_REQUEST Message
+     */
+    private void updateImgSendSize(String imgReqString) {
+        if (imgReqString == null) { return; }
+        if (imgReqString.matches("x[0-9]+y[0-9]+")) {
+            int yIdx = imgReqString.indexOf('y');
+            targetHeight = Integer.valueOf(imgReqString.substring(yIdx + 1));
+            imgReqString = imgReqString.substring(0, yIdx);  // remove y specification
+        }
+        if (imgReqString.matches("x[0-9]+")) {
+            targetWidth = Integer.valueOf(imgReqString.substring(1));
+            targetHeight = calcHeightMaintainAspectRatio(targetWidth);
+        }
+    }
+
+    /**
      * Captures the current (entire) screen, and sends it as a MyImage instance wrapped by the 
      * Message class via the ObjectOutputStream. 
      */
     private void sendScreen(String msgData) {
-        String[] data = msgData.split(" ");
         Instant begin = Instant.now();
         BufferedImage screenCap = robot.createScreenCapture(screenRect);
         long duration = Duration.between(begin, Instant.now()).toMillis();
-        System.out.println("sendScreen cap: " + duration +"ms");
-        if (data[0].isEmpty()) {
-            sendScreenImg(new MyImage(screenCap));
-            return;
-        }
-        targetWidth = Integer.valueOf(data[0]);
-        if (data.length == 1) {
-            sendScreenImg(new MyImage(MyImage.resizeToBytes(screenCap, targetWidth)));
-            // Calculate height for mouse position adjustments
-            float ratio = (float)(screenRect.getWidth() / targetWidth);
-            targetHeight = (int)(screenRect.getHeight() / ratio);
+        System.out.println("sendScreen screen capture: " + duration + "ms");
+
+        if (!msgData.isEmpty()) {
+            updateImgSendSize(msgData);
             updateMouseCorrection(targetWidth, targetHeight);
-            duration = Duration.between(begin, Instant.now()).toMillis();
-            System.out.println("sendScreen: " + duration +"ms");
-            return;
         }
-        targetHeight = Integer.valueOf(data[1]);
-        if (data.length == 2) {
-            sendScreenImg(new MyImage(MyImage.resizeToBytes(screenCap, targetWidth, targetHeight)));
-            updateMouseCorrection(targetWidth, targetHeight);
-            duration = Duration.between(begin, Instant.now()).toMillis();
-            System.out.println("sendScreen: " + duration + "ms");
-        }
+        sendScreenImg(new MyImage(MyImage.resizeToBytes(screenCap, targetWidth, targetHeight)));
+        duration = Duration.between(begin, Instant.now()).toMillis();
+        System.out.println("sendScreen total: " + duration + "ms");
     }
 
     /**

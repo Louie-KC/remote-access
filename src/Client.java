@@ -13,6 +13,7 @@ import java.awt.event.ComponentEvent;
 public class Client extends Base {
     private int framePanelWidthDiff;
     private boolean remoteOnSameOS;
+    private boolean sizeChanged;
     
     public Client(String targetIP, int targetPort) {
         // Establish connection
@@ -54,7 +55,7 @@ public class Client extends Base {
     public void run() {
         while (isConnected()) {
             Instant loopStart = Instant.now();
-            sendMsg(new Message<String>(Message.Type.IMG_REQUEST, getRequestImgWidth() + ""));
+            requestScreenImg(true);
             if (!receiveMsg()) {
                 closeConnection();
                 break;
@@ -99,13 +100,36 @@ public class Client extends Base {
     }
 
     /**
+     * Sends an IMG_REQUEST message to the remote machine. If the Window size has been
+     * recorded to have changed, adds image size details to the message for the remote
+     * machine to resize to.
+     * @param maintainAspectRatio send height/y value, or let remote decide appropriate value
+     */
+    private void requestScreenImg(boolean maintainAspectRatio) {
+        String reqString = "";
+        if (sizeChanged) {
+            System.out.println("sizeChanged was true");
+            reqString = "x" + getRequestImgWidth();
+            if (!maintainAspectRatio) {
+                reqString += "y" + getRequestImgHeight();
+            }
+            sizeChanged = false;
+        }
+        System.out.println("Requesting size: " + reqString);
+        sendMsg(new Message<String>(Message.Type.IMG_REQUEST, reqString));
+    }
+
+    /**
      * Checks last message for a MyImage instance and returns it.
      * @return MyImage if present, null otherwise.
      */
     private MyImage readScreenImg() {
         if (lastMsg != null && lastMsg.getType().equals(Message.Type.IMG_RESPONSE)) {
             if (lastMsg.getData() instanceof MyImage) {
-                return ((MyImage) lastMsg.getData());
+                MyImage rcvdImg = (MyImage) lastMsg.getData();
+                if (rcvdImg.getWidth() == getRequestImgWidth()) { sizeChanged = false; }
+                // return ((MyImage) lastMsg.getData());
+                return rcvdImg;
             }
         }
         return null;
@@ -127,5 +151,6 @@ public class Client extends Base {
     public void setRequestImgSize(int newWidth, int newHeight) {
         targetWidth = newWidth;
         targetHeight = newHeight;
+        sizeChanged = true;
     }
 }
